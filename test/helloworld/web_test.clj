@@ -1,6 +1,2 @@
-(ns helloworld.web-test
-  (:require [clojure.test :refer :all]
-            [helloworld.web :refer :all]))
+(ns helloworld.web-test)
 
-(deftest first-test
-  (is false "Tests should be written"))
