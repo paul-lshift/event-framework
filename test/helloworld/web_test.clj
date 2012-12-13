@@ -1,2 +1,3 @@
-(ns helloworld.web-test)
+(ns helloworld.web-test
+    (:use helloworld.web))
 

@@ -1,9 +1,6 @@
 (ns helloworld.web
-  (:use compojure.core
-        lamina.core
-        aleph.http)
-  (:require [compojure.handler :as handler]
-            [compojure.route :as route]))
+  (:use [compojure.core :only [defroutes GET]])
+  (:require [aleph http]))
 
 (defroutes app
   (GET "/" []
@@ -11,9 +8,8 @@
         :headers {"Content-Type" "text/plain"}
         :body "Hello from Heroku"}))
 
-
 (defn -main [port]
-  (start-http-server 
-    (wrap-ring-handler app)
+  (aleph.http/start-http-server 
+    (aleph.http/wrap-ring-handler app)
     {:port (Integer. port)}))
 
