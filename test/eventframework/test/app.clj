@@ -12,7 +12,7 @@
     (app (request :get "/"))
       => (contains {
           :status 200
-          :body #"Hello World"})
+          :body (filematch #"Index page")})
     (app (request :get "/api/foo"))
       => (contains {
           :status 200

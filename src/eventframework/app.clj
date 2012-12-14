@@ -14,8 +14,9 @@
     (json-middleware/wrap-json-response)))
 
 (def ui
-    (handler/site (GET "/" [] "Hello World")))
-
+  (handler/site 
+    (GET "/" []  (response/resource-response "index.html" {:root "public"}))))
+  
 (defroutes app
   (context "/api" [] api)
   ui
