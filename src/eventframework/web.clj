@@ -2,6 +2,7 @@
   (:use [compojure.core :only [defroutes GET PUT]])
   (:require [aleph http]
             [lamina core]
+            [ring.util.response :as response]
             [compojure.route :as route]))
 
 (defn modref [f sym]
@@ -11,8 +12,6 @@
 
 (defn getset [sym value]
     (dosync (let [old (deref sym)] (do (ref-set sym value) old))))
-
-; FIXME: atomicity of answering these
 
 (def waiting-channels (ref []))
 
@@ -28,18 +27,16 @@
         (lamina.core/enqueue c {:status 200 :body "I am free"})))
 
 (defroutes app
-  (GET "/" []
-       {:status 200
-        :headers {"Content-Type" "text/plain"}
-        :body "Hello from Heroku"})
-   (GET "/waitfor" [] (aleph.http/wrap-aleph-handler waitfor-handler))
-   (GET "/freeall" [] (do 
-        (prn (deref waiting-channels))
-        (prn "Freeing channels")
-        (freeall)
-        (prn (deref waiting-channels))
-        "They are free"))
-    (route/resources "/res"))
+  (GET "/" []  (response/resource-response "index.html" {:root "public"}))
+  (GET "/waitfor" [] (aleph.http/wrap-aleph-handler waitfor-handler))
+  (GET "/freeall" [] (do 
+    (prn (deref waiting-channels))
+    (prn "Freeing channels")
+    (freeall)
+    (prn (deref waiting-channels))
+    "They are free"))
+  (route/resources "/")
+  (route/not-found (response/resource-response "404.html" {:root "error"})))
 
 (defn -main [port]
   (aleph.http/start-http-server 
