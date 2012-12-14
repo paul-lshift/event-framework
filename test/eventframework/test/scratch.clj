@@ -1,4 +1,4 @@
-(ns eventframework.scratch
+(ns eventframework.test.scratch
   (:use 
     clojure.test
     midje.sweet))
