@@ -1,7 +1,8 @@
-(ns helloworld.web
+(ns eventframework.web
   (:use [compojure.core :only [defroutes GET PUT]])
   (:require [aleph http]
-            [lamina core]))
+            [lamina core]
+            [compojure.route :as route]))
 
 (defn modref [f sym]
     (dosync (ref-set sym (f (deref sym)))))
@@ -37,7 +38,8 @@
         (prn "Freeing channels")
         (freeall)
         (prn (deref waiting-channels))
-        "They are free")))
+        "They are free"))
+    (route/resources "/res"))
 
 (defn -main [port]
   (aleph.http/start-http-server 
