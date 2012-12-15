@@ -7,7 +7,8 @@
     [ring.util.response :as response]
     [compojure.route :as route]
     aleph.http
-    lamina.core))
+    lamina.core
+    cheshire.core))
 
 (defn modref [f sym]
     (dosync (ref-set sym (f (deref sym)))))
@@ -29,7 +30,13 @@
   (doseq [c (getset waiting-channels [])]
     (prn "Sending message to: " c)
     (lamina.core/enqueue c 
-      (response/content-type (response/response m) "text/plain"))))
+      (response/content-type 
+        (response/response 
+          (cheshire.core/generate-string {
+            :messages [m]
+            :position "0"
+          }))
+        "application/json"))))
 
 (defroutes ajax
   (GET "/foo" [] "foo")

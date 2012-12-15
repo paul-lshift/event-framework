@@ -3,6 +3,7 @@
                  [compojure "1.1.1"]
                  [ring/ring-devel "1.1.0"]
                  [aleph "0.2.2"]
+                 [cheshire "5.0.1"]
                  [ring/ring-json "0.1.2"]
                  [midje "1.4.0"]]
   :min-lein-version "2.0.0"
