@@ -1,17 +1,16 @@
 $(document).ready(function() {
     $("#rubbish-here").append("<li>hi</li>");
     function ajaxread(data) {
-        var li = document.createElement('li');
-        $(li).text(data);
-        $("#rubbish-here").append(li);
+        var li = document.createElement('li')
+        $(li).text(data)
+        $("#rubbish-here").append(li)
         $.ajax({
             url: "/ajax/getmsg"
-        }).done(ajaxread);
+        }).done(ajaxread)
     }
     ajaxread("test");
-    $("#button").click(function() {
-        $.post("/ajax/putmsg", {
-            message: "zow"
-        })
+    $("#form").submit(function() {
+        $.post("/ajax/putmsg", $("#form").serialize())
+        return false
     })
 });
