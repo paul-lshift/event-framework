@@ -1,4 +1,4 @@
-(ns eventframework.test.app
+(ns eventframework.app-test
   (:use 
     eventframework.app
     clojure.test

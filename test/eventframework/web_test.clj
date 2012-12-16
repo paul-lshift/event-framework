@@ -1,3 +1,3 @@
-(ns eventframework.test.web
+(ns eventframework.web-test
     (:use eventframework.web))
 

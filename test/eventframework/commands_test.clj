@@ -1,4 +1,4 @@
-(ns eventframework.test.commands
+(ns eventframework.commands-test
   (:use 
     eventframework.commands
     clojure.test
