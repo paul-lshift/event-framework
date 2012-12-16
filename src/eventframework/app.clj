@@ -1,5 +1,6 @@
 (ns eventframework.app
   (:use 
+    [eventframework.commands :only [put-command listen-commands]]
     [compojure.core :only [defroutes context GET POST]])
   (:require 
     [compojure.handler :as handler]
@@ -10,43 +11,24 @@
     lamina.core
     cheshire.core))
 
-(defn modref [f sym]
-    (dosync (ref-set sym (f (deref sym)))))
+(defn listen-response [position commands]
+  (response/content-type 
+    (response/response 
+      (cheshire.core/generate-string {
+        :position position
+        :messages commands
+    }))
+    "application/json"))
 
-(defn appendref [sym value] (modref #(conj % value) sym))
-
-(defn getset [sym value]
-    (dosync (let [old (deref sym)] (do (ref-set sym value) old))))
-
-(def waiting-channels (ref []))
-
-(defn getmsg-handler [channel request] (do
-  (prn (deref waiting-channels))
-  (prn "Waiting for: " channel)
-  (appendref waiting-channels channel)
-  (prn (deref waiting-channels))))
-
-(defn broadcast-message [m]
-  (doseq [c (getset waiting-channels [])]
-    (prn "Sending message to: " c)
-    (lamina.core/enqueue c 
-      (response/content-type 
-        (response/response 
-          (cheshire.core/generate-string {
-            :messages [m]
-            :position "0"
-          }))
-        "application/json"))))
+(defn getmsg-handler [channel request] 
+  (listen-commands (:position (:params request))
+    (fn [position commands] 
+      (lamina.core/enqueue channel (listen-response position commands)))))
 
 (defroutes ajax
   (GET "/foo" [] "foo")
   (GET "/getmsg" [] (aleph.http/wrap-aleph-handler getmsg-handler))
-  (POST "/putmsg" [message] (do
-    (prn (deref waiting-channels))
-    (prn "Sending message to channels:" message)
-    (broadcast-message message)
-    (prn (deref waiting-channels))
-    "OK")))
+  (POST "/putmsg" [message] (do (put-command message) "OK")))
 
 (defroutes ui
   (GET "/" []  (response/resource-response "index.html" {:root "public"})))
