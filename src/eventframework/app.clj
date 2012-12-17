@@ -1,7 +1,7 @@
 (ns eventframework.app
   (:use 
     [eventframework.commands :only [put-command listen-commands]]
-    [compojure.core :only [defroutes context GET POST]])
+    [compojure.core :only [defroutes context GET PUT]])
   (:require 
     [compojure.handler :as handler]
     [ring.util.response :as response]
@@ -27,7 +27,7 @@
 (defroutes ajax
   (GET "/foo" [] "foo")
   (GET "/getmsg" [] (aleph.http/wrap-aleph-handler getmsg-handler))
-  (POST "/putmsg" [uuid message] (do (put-command uuid message) "OK")))
+  (PUT "/putmsg/:uuid" [uuid message] (do (put-command uuid message) "OK")))
 
 (defroutes ui
   (GET "/" []  (response/resource-response "index.html" {:root "public"})))

@@ -12,18 +12,22 @@ $(document).ready(function() {
         })
         .done(ajaxread)
         .fail(function(jqXHR, textStatus) {
-            console.log("AJAX read failed, status:" + textStatus)
+            $("#complainhere").text(
+                "Net problem, you will need to reload this page. Status: "
+                + textStatus)
             //ajaxread({messages: [], position: data.position})
         })
     }
     ajaxread({messages: [], position: "0"})
     $("#form").submit(function(event) {
-        // event.preventDefault()
-        $("#uuid").val(uuid.v4())
-        $.post("/ajax/putmsg", $("#form").serialize())
+        var newuid = uuid.v4()
+        $.ajax({
+            type: 'PUT',
+            url: "/ajax/putmsg/" + newuid,
+            data: $("#form").serialize()
+        })
         this.reset()
-        //$("#message").focus()
-        return false // Oddly, this doesn't suffice to prevent default
+        return false
     })
     $("#message").focus()
 });
