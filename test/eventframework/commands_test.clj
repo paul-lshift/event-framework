@@ -10,7 +10,7 @@
 (deftest channel-test
   (facts "commands"
     (with-clear-commands
-      (put-command "foo")
+      (put-command "uuid" "foo")
       ((get-commands initial-position) 1))
     => ["foo"]
     (with-clear-commands
@@ -21,6 +21,17 @@
     (with-clear-commands
       (let [res (ref [])]
         (listen-commands initial-position (append-callback res))
-        (put-command "foo")
+        (put-command "uuid" "foo")
         (deref res)))
-    => ["foo"]))
+    => ["foo"]
+    (with-clear-commands
+      (put-command "uuid" "foo")
+      (put-command "uuid" "foo")
+      ((get-commands initial-position) 1))
+    => ["foo"]
+    (with-clear-commands
+      (put-command "uuid" "foo")
+      (put-command "uuid2" "foo")
+      ((get-commands initial-position) 1))
+    => ["foo", "foo"]))
+

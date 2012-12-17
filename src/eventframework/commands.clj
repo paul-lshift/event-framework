@@ -6,7 +6,7 @@
 
 (def initial-position (to-position 0))
 
-(def starting-state {:commands [] :waiting []})
+(def starting-state {:uuids #{} :commands [] :waiting []})
 
 (def ^:dynamic command-state (ref starting-state))
 
@@ -18,19 +18,22 @@
   (let [cl (:commands (deref command-state))]
     [(to-position (count cl)) (subvec cl (from-position position))]))
 
-(defn append-commands-get-waiting [commandlist]
-  (dosync (let [s (deref command-state) newcl (into (:commands s) commandlist)]
-    (ref-set command-state {:commands newcl :waiting []})
-    [(to-position (count newcl)) (:waiting s)])))
+(defn append-command-get-waiting [uuid command]
+  (dosync (let [s (deref command-state) newcl (conj (:commands s) command)]
+    (if (contains? (:uuids s) uuid)
+      [(to-position (count (:commands s))) nil]
+      (do
+        (ref-set command-state {
+            :uuids (conj (:uuids s) uuid) 
+            :commands newcl
+            :waiting []})
+        [(to-position (count newcl)) (:waiting s)])))))
 
-(defn put-commands [commandlist] 
-  (let [[position toalert] (append-commands-get-waiting commandlist)]
+(defn put-command [uuid command] 
+  (let [[position toalert] (append-command-get-waiting uuid command)]
     (doseq [listener toalert]
-      (listener position commandlist))))
-    
-(defn put-command [command]
-  (put-commands [command]))
-  
+      (listener position [command]))))
+      
 (defn get-after-or-add-waiting [position listener]
   (dosync (let [s (deref command-state) cl (:commands s) ix (from-position position)]
     (if (< ix (count cl))

@@ -4,7 +4,6 @@
     [compojure.core :only [defroutes context GET POST]])
   (:require 
     [compojure.handler :as handler]
-    [ring.middleware.json :as json-middleware]
     [ring.util.response :as response]
     [compojure.route :as route]
     aleph.http
@@ -28,7 +27,7 @@
 (defroutes ajax
   (GET "/foo" [] "foo")
   (GET "/getmsg" [] (aleph.http/wrap-aleph-handler getmsg-handler))
-  (POST "/putmsg" [message] (do (put-command message) "OK")))
+  (POST "/putmsg" [uuid message] (do (put-command uuid message) "OK")))
 
 (defroutes ui
   (GET "/" []  (response/resource-response "index.html" {:root "public"})))

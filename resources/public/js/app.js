@@ -14,6 +14,7 @@ $(document).ready(function() {
     }
     ajaxread({messages: [], position: "0"});
     $("#form").submit(function() {
+        $("#uuid").val(uuid.v4())
         $.post("/ajax/putmsg", $("#form").serialize())
         return false
     })

@@ -12,3 +12,10 @@
   :profiles {
     :dev {:dependencies [[ring-mock "0.1.3"]]
           :plugins [[lein-midje "2.0.2"]]}})
+
+; Copied in rather than added as dependency:
+
+; node-uuid
+; https://github.com/broofa/node-uuid/blob/master/uuid.js
+; Version: https://github.com/broofa/node-uuid/commit/0cdff1fb0bfb063a09254152958c4334d39c34bd
+
