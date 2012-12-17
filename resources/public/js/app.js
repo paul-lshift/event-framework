@@ -20,11 +20,15 @@ $(document).ready(function() {
     }
     ajaxread({messages: [], position: "0"})
     $("#form").submit(function(event) {
-        var newuid = uuid.v4()
-        $.ajax({
+        var request = {
             type: 'PUT',
-            url: "/ajax/putmsg/" + newuid,
+            url: "/ajax/putmsg/" + uuid.v4(),
             data: $("#form").serialize()
+        }
+        // Test idempotency - send everything twice
+        // Test idempotency - send everything twice
+        $.ajax(request).done(function() {
+            $.ajax(request)
         })
         this.reset()
         return false

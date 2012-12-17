@@ -23,10 +23,10 @@
     (if (contains? (:uuids s) uuid)
       [(to-position (count (:commands s))) nil]
       (do
-        (ref-set command-state {
+        (ref-set command-state (assoc s
             :uuids (conj (:uuids s) uuid) 
             :commands newcl
-            :waiting []})
+            :waiting []))
         [(to-position (count newcl)) (:waiting s)])))))
 
 (defn put-command [uuid command] 
@@ -39,8 +39,7 @@
     (if (< ix (count cl))
       [(to-position (count cl)) (subvec cl ix)]
       (do 
-        (ref-set command-state {
-          :commands cl :waiting (conj (:waiting s) listener)}) 
+        (ref-set command-state (update-in s [:waiting] #(conj % listener)))
         nil)))))
 
 (defn listen-commands [position listener]

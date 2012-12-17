@@ -27,7 +27,7 @@
 (defroutes ajax
   (GET "/foo" [] "foo")
   (GET "/getmsg" [] (aleph.http/wrap-aleph-handler getmsg-handler))
-  (PUT "/putmsg/:uuid" [uuid message] (do (put-command uuid message) "OK")))
+  (PUT "/putmsg/:uuid" [uuid message] (do (put-command uuid message) uuid)))
 
 (defroutes ui
   (GET "/" []  (response/resource-response "index.html" {:root "public"})))
