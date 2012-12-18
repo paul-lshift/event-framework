@@ -1,19 +1,24 @@
-function ajaxread(position) {
+var handleEvent = {
+    message: function(event) {
+        var li = document.createElement('li')
+        $(li).text(event.payload.message)
+        $("#rubbish-here").append(li)
+    }
+}
+function readEvents(position) {
     console.log("Requesting new data from position: " + position)
     var requeststart = new Date()
     $.ajax({
-        url: "/ajax/getmsg",
+        url: "/ajax/events",
         data: {position: position}
     })
     .done(function(data) {
-        var messages = data.messages
-        console.log("Got " + messages.length + " messages")
-        for (var i=0; i < messages.length; i++) {
-            var li = document.createElement('li')
-            $(li).text(messages[i])
-            $("#rubbish-here").append(li)
+        var events = data.events
+        console.log("Got " + events.length + " messages")
+        for (var i=0; i < events.length; i++) {
+            handleEvent[events[i].type](events[i])
         }
-        ajaxread(data.position)
+        readEvents(data.position)
     })
     .fail(function(jqXHR, textStatus) {
         var failtime = new Date()
@@ -23,37 +28,37 @@ function ajaxread(position) {
         var nextwait = 10000 - interval
         if (nextwait <= 0) {
             console.log("Making new request immediately")
-            ajaxread(position)
+            readEvents(position)
         } else {
             console.log("Making new request after " + nextwait + " ms")
             setTimeout(function() {
                 console.log("Timeout expired, making request")
-                ajaxread(position)
+                readEvents(position)
             }, nextwait)
         }
     })
 }
-function sendMessage(payload) {
+function sendCommand(type, payload) {
     var request = {
         type: 'PUT',
-        url: "/ajax/putmsg/" + uuid.v4(),
+        url: "/ajax/command/" + type + "/" + uuid.v4(),
         data: payload
     }
-    console.log("Sending message")
+    console.log("Sending command")
     // Test idempotency - send everything twice
     // Test idempotency - send everything twice
     $.ajax(request).done(function() {
-        console.log("Re-sending message")
+        console.log("Re-sending command")
         $.ajax(request)
     })
 }
 $(document).ready(function() {
     console.log("Document ready")
-    ajaxread("0")
     $("#form").submit(function(event) {
-        sendMessage($("#form").serialize())
+        sendCommand("message", $("#form").serialize())
         this.reset()
         return false
     })
     $("#message").focus()
+    readEvents("0")
 })

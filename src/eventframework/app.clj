@@ -15,19 +15,21 @@
     (response/response 
       (cheshire.core/generate-string {
         :position position
-        :messages commands
+        :events commands
     }))
     "application/json"))
 
-(defn getmsg-handler [channel request] 
+(defn getevents-handler [channel request] 
   (listen-commands (:position (:params request))
     (fn [position commands] 
       (lamina.core/enqueue channel (listen-response position commands)))))
 
 (defroutes ajax
   (GET "/foo" [] "foo")
-  (GET "/getmsg" [] (aleph.http/wrap-aleph-handler getmsg-handler))
-  (PUT "/putmsg/:uuid" [uuid message] (do (put-command uuid message) uuid)))
+  (GET "/events" [] (aleph.http/wrap-aleph-handler getevents-handler))
+  (PUT "/command/:type/:uuid" [type uuid message] (do 
+    (put-command uuid  {:type type :uuid uuid :payload {:message message}})
+    uuid)))
 
 (defroutes ui
   (GET "/" []  (response/resource-response "index.html" {:root "public"})))
