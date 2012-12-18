@@ -20,7 +20,7 @@
     (app (request :get "/js/app.js"))
       => (contains {
           :status 200
-          :body (filematch #"rubbish-here")})
+          :body (filematch #"readEvents")})
     (app (request :get "/does-not-exist"))
       => (contains {
           :status 404
