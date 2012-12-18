@@ -1,8 +1,40 @@
+function sendCommand(type, payload) {
+    var request = {
+        type: 'PUT',
+        url: "/ajax/command/" + type + "/" + uuid.v4(),
+        data: payload
+    }
+    console.log("Sending command")
+    // Test idempotency - send everything twice
+    // Test idempotency - send everything twice
+    $.ajax(request).done(function() {
+        console.log("Re-sending command")
+        $.ajax(request)
+    })
+}
 var handleEvent = {
+    newthread: function(event) {
+        var h = document.createElement('h2')
+        $(h).text(event.payload.title)
+        $("#threads-here").append(h)
+        $("#threads-here").append(
+            "<ul id=\"ul-" + event.uuid + "\"></ul>" +
+            "<form id=\"thread-" + event.uuid + "\">" +
+            "<input type=\"hidden\" name=\"thread\" value=\"" +
+            event.uuid + "\">" +
+            "<input type=\"text\" name=\"message\" size=\"100\">" +
+            "<input type=\"submit\" value=\"Submit\">" +
+            "</form>")
+        $("#thread-" + event.uuid).submit(function(event) {
+            sendCommand("message", $(this).serialize())
+            this.reset()
+            return false
+        })
+    },
     message: function(event) {
         var li = document.createElement('li')
         $(li).text(event.payload.message)
-        $("#rubbish-here").append(li)
+        $("#ul-" + event.payload.thread).append(li);
     }
 }
 function readEvents(position) {
@@ -15,10 +47,10 @@ function readEvents(position) {
     .done(function(data) {
         if (data.goaway) {
             console.log("Server told us to go away");
-            $("#complainhere").text("Server has told us to go away.")
+            $("#complainhere").text("Server has told us to go away; please reload.")
         } else {
             var events = data.events
-            console.log("Got " + events.length + " messages")
+            console.log("Got " + events.length + " events")
             for (var i=0; i < events.length; i++) {
                 handleEvent[events[i].type](events[i])
             }
@@ -43,27 +75,13 @@ function readEvents(position) {
         }
     })
 }
-function sendCommand(type, payload) {
-    var request = {
-        type: 'PUT',
-        url: "/ajax/command/" + type + "/" + uuid.v4(),
-        data: payload
-    }
-    console.log("Sending command")
-    // Test idempotency - send everything twice
-    // Test idempotency - send everything twice
-    $.ajax(request).done(function() {
-        console.log("Re-sending command")
-        $.ajax(request)
-    })
-}
 $(document).ready(function() {
     console.log("Document ready")
-    $("#form").submit(function(event) {
-        sendCommand("message", $("#form").serialize())
+    $("#newthread").submit(function(event) {
+        sendCommand("newthread", $(this).serialize())
         this.reset()
         return false
     })
-    $("#message").focus()
+    $("#initfocus").focus()
     readEvents("")
 })

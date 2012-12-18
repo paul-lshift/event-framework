@@ -12,12 +12,13 @@
 <body>
   <h1>Proof-of-concept chat client</h1>
   <p id="complainhere">A simple test of my async event handling framework.</p>
-  <ul id="rubbish-here">
-    <li>Messages appear here.</li>
-  </ul>
-  <form id="form" method="POST">
-    <input id="message" type="text" name="message" size="100">
-    <input type="submit" value="Submit">
+  <div id="threads-here"></div>
+  <h2>Create new thread</h2>
+  <form id="newthread">
+    <p>Thread title:
+      <input id="initfocus" type="text" name="title" size="100">
+      <input type="submit" value="Submit">
+    </p>
   </form>
 </body>
 </html>

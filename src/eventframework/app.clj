@@ -30,9 +30,19 @@
 (defroutes ajax
   (GET "/foo" [] "foo")
   (GET "/events" [] (aleph.http/wrap-aleph-handler getevents-handler))
-  (PUT "/command/:type/:uuid" [type uuid message] (do 
-    (put-command uuid  {:type type :uuid uuid :payload {:message message}})
-    uuid)))
+  (PUT "/command/:type/:uuid" {
+      route-params :route-params
+      form-params :form-params
+      remote-addr :remote-addr
+    }
+    (let [{type :type uuid :uuid} route-params]
+      (put-command uuid {
+        :type type
+        :uuid uuid
+        :remote-addr remote-addr
+        :payload form-params
+      })
+      uuid)))
 
 (defroutes ui
   (GET "/" []  (response/resource-response "index.html" {:root "public"})))
