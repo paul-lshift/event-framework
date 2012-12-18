@@ -1,6 +1,6 @@
 (ns eventframework.app
   (:use 
-    [eventframework.commands :only [put-command listen-commands]]
+    [eventframework.commands :only [is-valid-position put-command listen-commands]]
     [compojure.core :only [defroutes context GET PUT]])
   (:require 
     [compojure.handler :as handler]
@@ -10,19 +10,22 @@
     lamina.core
     cheshire.core))
 
-(defn listen-response [position commands]
+(defn json-response [data]
   (response/content-type 
-    (response/response 
-      (cheshire.core/generate-string {
-        :position position
-        :events commands
-    }))
+    (response/response (cheshire.core/generate-string data))
     "application/json"))
 
 (defn getevents-handler [channel request] 
-  (listen-commands (:position (:params request))
-    (fn [position commands] 
-      (lamina.core/enqueue channel (listen-response position commands)))))
+  (let [position (:position (:params request))]
+    (if (not (is-valid-position position))
+      (lamina.core/enqueue channel (json-response {:goaway true}))
+      (listen-commands
+        position
+        (fn [position commands]
+          (lamina.core/enqueue channel (json-response {
+            :position position
+            :events commands
+          })))))))
 
 (defroutes ajax
   (GET "/foo" [] "foo")

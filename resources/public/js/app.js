@@ -13,12 +13,17 @@ function readEvents(position) {
         data: {position: position}
     })
     .done(function(data) {
-        var events = data.events
-        console.log("Got " + events.length + " messages")
-        for (var i=0; i < events.length; i++) {
-            handleEvent[events[i].type](events[i])
+        if (data.goaway) {
+            console.log("Server told us to go away");
+            $("#complainhere").text("Server has told us to go away.")
+        } else {
+            var events = data.events
+            console.log("Got " + events.length + " messages")
+            for (var i=0; i < events.length; i++) {
+                handleEvent[events[i].type](events[i])
+            }
+            readEvents(data.position)
         }
-        readEvents(data.position)
     })
     .fail(function(jqXHR, textStatus) {
         var failtime = new Date()
@@ -60,5 +65,5 @@ $(document).ready(function() {
         return false
     })
     $("#message").focus()
-    readEvents("0")
+    readEvents("")
 })
