@@ -37,10 +37,10 @@
     }
     (let [{type :type uuid :uuid} route-params]
       (put-command uuid {
-        :type type
+        :type (keyword type)
         :uuid uuid
         :remote-addr remote-addr
-        :payload form-params
+        :payload (zipmap (map keyword (keys form-params)) (vals form-params))
       })
       uuid)))
 
