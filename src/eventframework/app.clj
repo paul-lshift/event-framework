@@ -10,26 +10,26 @@
     lamina.core
     cheshire.core))
 
-(defn json-response [data]
-  (response/content-type 
-    (response/response (cheshire.core/generate-string data))
-    "application/json"))
-
-(defn getevents-handler [channel request] 
-  (let [position (:position (:params request))]
+(defn getevents [position]
     (if (not (is-valid-position position))
-      (lamina.core/enqueue channel (json-response {:goaway true}))
-      (listen-commands
-        position
-        (fn [position commands]
-          (lamina.core/enqueue channel (json-response {
-            :position position
-            :events commands
-          })))))))
+      (cheshire.core/generate-string {:goaway true})
+      (let [ch (lamina.core/channel)]
+	      (listen-commands
+	        position
+	        (fn [position commands] (do
+	          (lamina.core/enqueue ch (cheshire.core/generate-string {
+	            :position position
+	            :events commands
+            }))
+            (lamina.core/close ch))))
+        ch)))
 
 (defroutes ajax
   (GET "/foo" [] "foo")
-  (GET "/events" [] (aleph.http/wrap-aleph-handler getevents-handler))
+  (GET "/events" [position] {
+     :status 200
+     :headers {"content-type" "application/json"}
+     :body (getevents position)})
   (PUT "/command/:type/:uuid" {
       route-params :route-params
       form-params :form-params
