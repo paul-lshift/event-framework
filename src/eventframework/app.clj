@@ -1,6 +1,7 @@
 (ns eventframework.app
   (:use 
-    [eventframework.commands :only [is-valid-position put-command listen-commands]]
+    [eventframework.commands :only [is-valid-position put-command]]
+    [eventframework.business :only [listen-events]]
     [compojure.core :only [defroutes context GET PUT]])
   (:require 
     [compojure.handler :as handler]
@@ -10,26 +11,25 @@
     lamina.core
     cheshire.core))
 
-(defn getevents [position]
-    (if (not (is-valid-position position))
-      (cheshire.core/generate-string {:goaway true})
-      (let [ch (lamina.core/channel)]
-	      (listen-commands
-	        position
-	        (fn [position commands] (do
-	          (lamina.core/enqueue ch (cheshire.core/generate-string {
-	            :position position
-	            :events commands
-            }))
-            (lamina.core/close ch))))
-        ch)))
+(defn getevents [user position]
+  (if (not (is-valid-position position))
+    (cheshire.core/generate-string {:goaway true})
+    (let [ch (lamina.core/channel)]
+     (listen-events user position
+       (fn [position events] (do
+         (lamina.core/enqueue ch (cheshire.core/generate-string {
+           :position position
+           :events events
+          }))
+          (lamina.core/close ch))))
+      ch)))
 
 (defroutes ajax
   (GET "/foo" [] "foo")
-  (GET "/events" [position] {
+  (GET "/events/:user/:position" [user position] {
      :status 200
      :headers {"content-type" "application/json"}
-     :body (getevents position)})
+     :body (getevents user position)})
   (PUT "/command/:type/:uuid" {
       route-params :route-params
       form-params :form-params

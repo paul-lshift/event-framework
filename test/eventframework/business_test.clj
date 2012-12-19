@@ -19,5 +19,17 @@
         (update-state {:type :subscribe :payload {:user "foo" :thread "thread"}}))
       "thread"
       "bar")
-    => falsey))
-
+    => falsey
+    (reduce-commands
+      "user"
+      initial-state
+      [{:type :newthread
+        :uuid "1"
+        :payload {:title "title"}}
+       {:type :subscribe
+        :uuid "2"
+        :payload {:user "user" :thread "1"}}
+       {:type :message
+        :uuid "3"
+        :payload {:thread "1" :message "foo"}}])
+    => not-nil?))

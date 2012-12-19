@@ -1,3 +1,4 @@
+var userid = uuid.v4()
 function sendCommand(type, payload) {
     var request = {
         type: 'PUT',
@@ -14,18 +15,34 @@ function sendCommand(type, payload) {
 }
 var handleEvent = {
     newthread: function(event) {
-        var h = document.createElement('h2')
-        $(h).text(event.payload.title)
-        $("#threads-here").append(h)
         $("#threads-here").append(
-            "<ul id=\"ul-" + event.uuid + "\"></ul>" +
-            "<form id=\"thread-" + event.uuid + "\">" +
+            "<div id=\"thread-" + event.uuid + "\">" +
+            "<h2></h2>" +
+            "<form>" +
+            "<input type=\"hidden\" name=\"user\" value=\"" +
+            userid + "\">" +
             "<input type=\"hidden\" name=\"thread\" value=\"" +
             event.uuid + "\">" +
+            "<input type=\"submit\" value=\"Subscribe\">" +
+            "</form>" +
+            "</div>")
+        $("#thread-" + event.uuid + " h2").text(event.payload.title)
+        $("#thread-" + event.uuid + " form").submit(function(event) {
+            sendCommand("subscribe", $(this).serialize())
+            return false
+        })
+    },
+    subscribe: function(event) {
+        $("#thread-" + event.payload.thread + " form").remove()
+        $("#thread-" + event.payload.thread).append(
+            "<ul></ul>" +
+            "<form>" +
+            "<input type=\"hidden\" name=\"thread\" value=\"" +
+            event.payload.thread + "\">" +
             "<input type=\"text\" name=\"message\" size=\"100\">" +
             "<input type=\"submit\" value=\"Submit\">" +
             "</form>")
-        $("#thread-" + event.uuid).submit(function(event) {
+        $("#thread-" + event.payload.thread + " form").submit(function(event) {
             sendCommand("message", $(this).serialize())
             this.reset()
             return false
@@ -34,26 +51,34 @@ var handleEvent = {
     message: function(event) {
         var li = document.createElement('li')
         $(li).text(event.payload.message)
-        $("#ul-" + event.payload.thread).append(li);
-    }
+        $("#thread-" + event.payload.thread + " ul").append(li);
+    },
+}
+function handleEventList(events) {
+	console.log(">> Got " + events.length + " events")
+	for (var i=0; i < events.length; i++) {
+		var event = events[i]
+		console.log("Handling: " + event.type)
+	    handleEvent[event.type](event)
+	    if (event.extraevents) {
+	        console.log("Event has extra events")
+	        handleEventList(event.extraevents)
+	    }
+	}
+	console.log("<< Events handled")
 }
 function readEvents(position) {
     console.log("Requesting new data from position: " + position)
     var requeststart = new Date()
     $.ajax({
-        url: "/ajax/events",
-        data: {position: position}
+        url: "/ajax/events/" + userid + "/" + position,
     })
     .done(function(data) {
         if (data.goaway) {
             console.log("Server told us to go away");
             $("#complainhere").text("Server has told us to go away; please reload.")
         } else {
-            var events = data.events
-            console.log("Got " + events.length + " events")
-            for (var i=0; i < events.length; i++) {
-                handleEvent[events[i].type](events[i])
-            }
+            handleEventList(data.events)
             readEvents(data.position)
         }
     })
@@ -83,5 +108,5 @@ $(document).ready(function() {
         return false
     })
     $("#initfocus").focus()
-    readEvents("")
+    readEvents("0")
 })

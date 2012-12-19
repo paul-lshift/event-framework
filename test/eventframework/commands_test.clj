@@ -13,7 +13,7 @@
   (facts "commands"
     (with-clear-commands
       (put-command "uuid" "foo")
-      ((get-commands initial-position) 1))
+      ((get-commands-from initial-position) 1))
     => ["foo"]
     (with-clear-commands
       (let [res (ref [])]
@@ -29,12 +29,12 @@
     (with-clear-commands
       (put-command "uuid" "foo")
       (put-command "uuid2" "foo")
-      ((get-commands initial-position) 1))
+      ((get-commands-from initial-position) 1))
     => ["foo", "foo"]
     (with-clear-commands
       (put-command "uuid" "foo")
       (put-command "uuid" "foo")
-      ((get-commands initial-position) 1))
+      ((get-commands-from initial-position) 1))
     => ["foo"]
     (with-clear-commands
       (let [res (ref [])]

@@ -2,7 +2,7 @@
 
 (defn new-uuid [] (str (java.util.UUID/randomUUID)))
 
-(def initial-position "")
+(def initial-position "0")
 
 (defn starting-state []
   (assoc {:uuids #{} :commands [] :waiting []}
@@ -10,13 +10,13 @@
 
 (defn to-position [s i]
   (if (= i 0)
-    ""
+    initial-position
     (str (:uuid s) ":" i)))
 
 (defn from-position [s p]
   (let [rm (re-matches #"([a-z0-9-]+):([0-9]+)" p)]
     (cond
-      (= p "") 0
+      (= p initial-position) 0
       (nil? rm) nil
       (not= (rm 1) (:uuid s)) nil
       :else (let [i (Integer/parseInt (rm 2))]
@@ -31,9 +31,13 @@
 (defn is-valid-position [p]
   (not (nil? (from-position (deref command-state) p))))
 
-(defn get-commands [position] 
+(defn get-commands-from [position]
   (let [s (deref command-state) cl (:commands s)]
     [(to-position s (count cl)) (subvec cl (from-position s position))]))
+
+(defn get-commands-to [position]
+  (let [s (deref command-state) cl (:commands s)]
+    (subvec cl 0 (from-position s position))))
 
 (defn append-command-get-waiting [uuid command]
   (dosync (let [s (deref command-state) newcl (conj (:commands s) command)]
@@ -65,4 +69,4 @@
 
 (defn listen-commands [position listener]
   (let [res (get-after-or-add-waiting position listener)]
-    (if res (listener (res 0) (res 1)))))
+    (if res (apply listener res))))
