@@ -1,9 +1,9 @@
 (ns eventframework.app
-  (:use 
+  (:use
     [eventframework.commands :only [is-valid-position put-command]]
     [eventframework.business :only [listen-events]]
     [compojure.core :only [defroutes context GET PUT]])
-  (:require 
+  (:require
     [compojure.handler :as handler]
     [ring.util.response :as response]
     [compojure.route :as route]
@@ -15,25 +15,24 @@
   (if (not (is-valid-position position))
     (cheshire.core/generate-string {:goaway true})
     (let [ch (lamina.core/channel)]
-     (listen-events user
-                    position
-                    (fn [position events]
-                      (do
-                        (lamina.core/enqueue ch
-                                             (cheshire.core/generate-string
-                                              {:position position
-                                               :events   events}))
-                        (lamina.core/close ch))))
-     ch)))
+      (listen-events user
+                     position
+                     (fn [position events]
+                       (lamina.core/enqueue ch
+                                            (cheshire.core/generate-string
+                                             {:position position
+                                              :events   events}))
+                       (lamina.core/close ch)))
+      ch)))
 
 (defroutes ajax
   (GET "/foo" [] "foo")
-  
+
   (GET "/events/:user/:position" [user position]
        {:status  200
         :headers {"content-type" "application/json"}
         :body    (getevents user position)})
-  
+
   (PUT "/command/:type/:uuid"
        {route-params :route-params
         form-params  :form-params
