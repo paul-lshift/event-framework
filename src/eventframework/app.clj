@@ -42,7 +42,7 @@
                       {:type        (keyword type)
                        :uuid        uuid
                        :remote-addr remote-addr
-                       :payload     (zipmap (map keyword
+                       :body        (zipmap (map keyword
                                                  (keys form-params))
                                             (vals form-params))})
          uuid)))

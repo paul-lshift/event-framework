@@ -9,14 +9,14 @@
     (subscribed?
      (->
       initial-state
-      (update-state {:type :subscribe :payload {:user "foo" :thread "thread"}}))
+      (update-state {:type :subscribe :body {:user "foo" :thread "thread"}}))
      "thread"
      "foo")
     => true
     (subscribed?
      (->
       initial-state
-      (update-state {:type :subscribe :payload {:user "foo" :thread "thread"}}))
+      (update-state {:type :subscribe :body {:user "foo" :thread "thread"}}))
      "thread"
      "bar")
     => false
@@ -25,18 +25,18 @@
               initial-state
               [{:type :newthread
                 :uuid "1"
-                :payload {:title "title"}}
+                :body {:title "title"}}
                {:type :subscribe
                 :uuid "2"
-                :payload {:user "user" :thread "1"}}
+                :body {:user "user" :thread "1"}}
                {:type :message
                 :uuid "3"
-                :payload {:thread "1" :message "foo"}}]))
+                :body {:thread "1" :message "foo"}}]))
     =>
-    [{:type :newthread, :uuid "1", :payload {:title "title"}}
+    [{:type :newthread, :uuid "1", :body {:title "title"}}
      {:type :subscribe
       :uuid "2",
-      :payload {:thread "1", :user "user"},
+      :body {:thread "1", :user "user"},
       :extraevents [],
       }
-     {:payload {:thread "1", :message "foo"}, :uuid "3", :type :message}]))
+     {:body {:thread "1", :message "foo"}, :uuid "3", :type :message}]))

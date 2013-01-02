@@ -18,14 +18,14 @@
 
 (defn update-state [state command]
   "Produce the next `state` resulting from `command` or nil if invalid. "
-  (let [{type :type payload :payload} command]
+  (let [{type :type body :body} command]
     (case type
-      :subscribe (let [{user :user thread :thread} payload]
+      :subscribe (let [{user :user thread :thread} body]
                    (update-in state
                               [:subscriptions thread user]
                               (constantly true)))
       :newthread state
-      :message (let [{thread :thread} payload]
+      :message (let [{thread :thread} body]
                  (update-in state
                             [:threads thread]
                             (fn [v] ((fnil conj []) v command))))
@@ -36,16 +36,16 @@
   (boolean (get-in state [:subscriptions thread user])))
 
 (defn gen-events [eventuser state command]
-  (let [{type :type payload :payload} command]
+  (let [{type :type body :body} command]
     (case type
-      :subscribe (let [{user :user thread :thread} payload]
+      :subscribe (let [{user :user thread :thread} body]
                    (if (and (= user eventuser)
                             (not (subscribed? state thread eventuser)))
                      ;; FIXME(alexander): flatten this
                      [(assoc command :extraevents (get-in state [:threads thread] []))]
                      []))
       :newthread [command]
-      :message (let [{thread :thread} payload]
+      :message (let [{thread :thread} body]
                  (if (subscribed? state thread eventuser)
                    [command]
                    []))
