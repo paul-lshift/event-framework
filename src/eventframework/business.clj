@@ -1,28 +1,47 @@
 (ns eventframework.business
-  (:require eventframework.commands))
+  (:require eventframework.commands)
+  (:require [clojure.tools.logging :as log]))
 
 ;; --------- Business logic
 
-(def initial-state {:thread-subscriptions {} :threads {}})
+(defrecord ThreadsAndSubscriptions
+    [threads subscriptions])
 
-(defn update-state-or-nil [state command]
+(defrecord CommandResult
+    [new-state events])
+
+(defrecord Message
+    [id type body])
+
+
+(def initial-state (ThreadsAndSubscriptions. {} {}))
+
+(defn update-state [state command]
+  "Produce the next `state` resulting from `command` or nil if invalid. "
   (let [{type :type payload :payload} command]
     (case type
       :subscribe (let [{user :user thread :thread} payload]
-                   (update-in state [:thread-subscriptions thread user] (fn [_] true)))
+                   (update-in state
+                              [:subscriptions thread user]
+                              (constantly true)))
       :newthread state
       :message (let [{thread :thread} payload]
-                 (update-in state [:threads thread] (fn [v] ((fnil conj []) v command))))
-      nil)))
+                 (update-in state
+                            [:threads thread]
+                            (fn [v] ((fnil conj []) v command))))
+      (do (log/warn "Ignoring unknown command type" type "while updating state")
+          nil))))
 
-(defn subscribed? [state thread user] 
-  (get-in state [:thread-subscriptions thread user]))
+(defn subscribed? [state thread user]
+  (boolean (get-in state [:subscriptions thread user])))
 
 (defn gen-events [eventuser state command]
   (let [{type :type payload :payload} command]
     (case type
       :subscribe (let [{user :user thread :thread} payload]
-                   (if (and (= user eventuser) (not (subscribed? state thread eventuser)))
+                   (if (and (= user eventuser)
+                            (not (subscribed? state thread eventuser)))
+                     ;; FIXME(alexander): flatten this
                      [(assoc command :extraevents (get-in state [:threads thread] []))]
                      []))
       :newthread [command]
@@ -30,34 +49,45 @@
                  (if (subscribed? state thread eventuser)
                    [command]
                    []))
-      [])))
+      (do (log/warn "Ignoring unknown command type" type "while gen. events")
+          []))))
+
+(defn reduce-non-nil
+  "Like reduce, but skipping over values for which f yields nil.
+
+  (nil results are logged as errors)"
+  [f & args]
+  (apply reduce
+         (fn [x y] (if-let [x' (f x y)]
+                     x'
+                     (do (log/errorf "Fn ~s returned nil on ~s, keeping ~s"
+                                     f y x)
+                         x)))
+         args))
 
 ;; ----------- Generic stuff not dependent on exact business logic
 
-(defn update-state [state command]
-  (or (update-state-or-nil state command) state))
+(defn state-at [position]
+  (reduce-non-nil update-state initial-state
+                  (eventframework.commands/get-commands-to position)))
 
-(defn get-state [position]
-  (reduce update-state initial-state
-          (eventframework.commands/get-commands-to position)))
+(defn apply-commands [user state commands]
+  (let [apply-command
+        (fn [{state :new-state events :events} command]
+          (when-let [new-state (update-state state command)]
+            (CommandResult. new-state (into events (gen-events user state command)))))]
+   (reduce-non-nil apply-command
+                   (CommandResult. state [])
+                   commands)))
 
-(defn reduce-command [user [state eventlist] command]
-  (let [newstate (update-state-or-nil state command)]
-    (if (nil? newstate)
-      [state eventlist] ; Ignore invalid commands
-      [newstate (into eventlist (gen-events user state command))])))
-
-(defn reduce-commands [user state commands]
-  (reduce #(reduce-command user %1 %2) [state []] commands))
-
-(defn do-listen-events [user position state callback]
-  (eventframework.commands/listen-commands
-   position
-   (fn [newpos commands]
-     (let [[newstate events] (reduce-commands user state commands)]
-       (if (not-empty events)
-         (callback newpos events)
-         (do-listen-events user newpos newstate callback))))))
-
-(defn listen-events [user position callback]
-  (do-listen-events user position (get-state position) callback))
+(defn listen-events
+  ([user position callback]
+     (listen-events user position callback (state-at position)))
+  ([user position callback state]
+     (eventframework.commands/listen-commands
+      position
+      (fn [new-pos commands]
+        (let [{:keys [new-state events]} (apply-commands user state commands)]
+          (if (not-empty events)
+            (callback new-pos events)
+            (listen-events user new-pos callback new-state)))))))

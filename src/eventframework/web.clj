@@ -1,9 +1,12 @@
 (ns eventframework.web
   (:require eventframework.app
-            [aleph http]))
+            [aleph http]
+            clojure.tools.logging
+            [clj-logging-config.log4j :as log-config]
+            ))
 
 (defn -main [port]
-  (aleph.http/start-http-server 
+  (log-config/set-logger! :out *err*)
+  (aleph.http/start-http-server
    (aleph.http/wrap-ring-handler eventframework.app/app)
    {:port (Integer. port)}))
-
