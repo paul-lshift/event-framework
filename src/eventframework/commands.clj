@@ -57,7 +57,7 @@
         ix (from-position s position)]
     (subvec cl 0 ix)))
 
-(defn get-latest-position-and-commands-after [state position]
+(defn get-next-position-and-commands-from [state position]
   (let [cl (:commands state)
         ix (from-position state position)]
     (when (< ix (count cl))
@@ -65,16 +65,16 @@
        (subvec cl ix)])))
 
 ;; FIXME(alexander): clean this up once more
-(defn- get-after-or-add-waiting! [position listener]
+(defn- get-from-or-add-waiting! [position listener]
   (dosync
    (let [state (deref command-state)]
-     (or (get-latest-position-and-commands-after state position)
+     (or (get-next-position-and-commands-from state position)
          (do (ref-set command-state
                       (update-in state [:waiting] #(conj % listener)))
              nil)))))
 
 (defn apply-or-enqueue-listener! [position listener]
   "Apply `listener` to all commands past `position`, or if none, enqueue it."
-  (when-let [[new-pos new-commands] (get-after-or-add-waiting! position listener)]
+  (when-let [[new-pos new-commands] (get-from-or-add-waiting! position listener)]
     (listener new-pos new-commands)
     nil))

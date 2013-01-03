@@ -14,7 +14,7 @@
     (apply-or-enqueue-listener! position (append-callback sym)))))
 
 (defn get-new-commands [position]
-  (let [[_ commands] (get-latest-position-and-commands-after
+  (let [[_ commands] (get-next-position-and-commands-from
                       (deref command-state)
                       position)]
     commands))

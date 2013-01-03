@@ -63,7 +63,7 @@
 
 ;; ----------- Generic stuff not dependent on exact business logic
 
-(defn state-at [position]
+(defn state-before [position]
   (reduce-non-nil update-state initial-state
                   (eventframework.commands/get-commands-before position)))
 
@@ -78,7 +78,7 @@
 
 (defn listen-events!
   ([user position callback]
-     (listen-events! user position callback (state-at position)))
+     (listen-events! user position callback (state-before position)))
   ([user position callback state]
      (eventframework.commands/apply-or-enqueue-listener!
       position
