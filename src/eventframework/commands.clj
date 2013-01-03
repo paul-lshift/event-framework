@@ -25,9 +25,7 @@
              (if (> i (count (:commands s))) nil i)))))
 
 ;; FIXME(alexander): make sure this has right thread-scope
-(def ^:dynamic command-state (ref (starting-state)))
-
-
+(def command-state (ref (starting-state)))
 
 (defn is-valid-position [p]
   (not (nil? (from-position (deref command-state) p))))

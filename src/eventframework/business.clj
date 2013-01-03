@@ -65,7 +65,7 @@
 
 (defn state-at [position]
   (reduce-non-nil update-state initial-state
-                  (eventframework.commands/get-commands-to position)))
+                  (eventframework.commands/get-commands-before position)))
 
 (defn apply-commands [user state commands]
   (let [apply-command
