@@ -75,8 +75,6 @@
 
 (defn apply-or-enqueue-listener! [position listener]
   "Apply `listener` to all commands past `position`, or if none, enqueue it."
-  (let [foo (get-after-or-add-waiting! position listener)]
-    (prn "foo is" foo)
-    (when-let [[new-pos new-commands] foo]
-      (listener new-pos new-commands)
-      nil)))
+  (when-let [[new-pos new-commands] (get-after-or-add-waiting! position listener)]
+    (listener new-pos new-commands)
+    nil))
