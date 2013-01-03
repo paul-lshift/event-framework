@@ -16,18 +16,18 @@ function sendCommand(type, body) {
 var handleEvent = {
   newthread: function(event) {
     $("#threads-here").append(
-      "<div id=\"thread-" + event.uuid + "\">" +
+      "<div id=\"thread-" + event.id + "\">" +
       "<h2></h2>" +
       "<form>" +
       "<input type=\"hidden\" name=\"user\" value=\"" +
       userid + "\">" +
       "<input type=\"hidden\" name=\"thread\" value=\"" +
-      event.uuid + "\">" +
+      event.id + "\">" +
       "<input type=\"submit\" value=\"Subscribe\">" +
       "</form>" +
       "</div>");
-    $("#thread-" + event.uuid + " h2").text(event.body.title);
-    $("#thread-" + event.uuid + " form").submit(function(event) {
+    $("#thread-" + event.id + " h2").text(event.body.title);
+    $("#thread-" + event.id + " form").submit(function(event) {
       sendCommand("subscribe", $(this).serialize());
       return false;
     });

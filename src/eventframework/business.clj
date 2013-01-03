@@ -1,6 +1,6 @@
 (ns eventframework.business
-  (:require eventframework.commands)
-  (:require [clojure.tools.logging :as log]))
+  (:require eventframework.commands
+            [clojure.tools.logging :as log]))
 
 ;; --------- Business logic
 

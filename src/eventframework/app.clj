@@ -1,6 +1,6 @@
 (ns eventframework.app
   (:use
-    [eventframework.commands :only [is-valid-position put-command]]
+    [eventframework.commands :only [valid-position? put-command!]]
     [eventframework.business :only [listen-events!]]
     [compojure.core :only [defroutes context GET PUT]])
   (:require
@@ -12,7 +12,7 @@
     cheshire.core))
 
 (defn getevents [user position]
-  (if (not (is-valid-position position))
+  (if (not (valid-position? position))
     (cheshire.core/generate-string {:goaway true})
     (let [ch (lamina.core/channel)]
       (listen-events! user
@@ -33,19 +33,19 @@
         :headers {"content-type" "application/json"}
         :body    (getevents user position)})
 
-  (PUT "/command/:type/:uuid"
+  (PUT "/command/:type/:id"
        {route-params :route-params
         form-params  :form-params
         remote-addr  :remote-addr}
-       (let [{type :type uuid :uuid} route-params]
-         (put-command uuid
+       (let [{type :type id :id} route-params]
+         (put-command! id
                       {:type        (keyword type)
-                       :uuid        uuid
+                       :id           id
                        :remote-addr remote-addr
                        :body        (zipmap (map keyword
                                                  (keys form-params))
                                             (vals form-params))})
-         uuid)))
+         id)))
 
 (defroutes ui
   (GET "/" []  (response/resource-response "index.html" {:root "public"})))

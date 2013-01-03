@@ -1,26 +1,52 @@
-(ns eventframework.commands)
+(ns eventframework.commands
+  (:require [clojure.tools.logging :as log]))
 
-(defrecord Message
-    [id type body])
+(defrecord ^{:doc "Stores the command state of the server.
+
+    command-ids
+
+    : The set of all command-ids already obtained
+
+    commands
+
+    : All submitted commands
+
+    waiting
+
+    : Listeners to be notified of new events (triggered by a command).
+
+    world-id
+
+    : This is a unique id for the whole environment/world; for a persistent
+    backend this will be fixed at its creation. For transient backends (for
+    testing etc.) it's generated on startup which means the client can easily
+    diagnose if the server went down (because it will come up w/ a new,
+    incompatible world-id)."}
+    CommandState
+    [command-ids commands waiting world-id])
 
 (defn new-uuid [] (str (java.util.UUID/randomUUID)))
 
 (def initial-position "0")
 
 (defn starting-state []
-  {:uuids #{} :commands [] :waiting [] :uuid (new-uuid)})
+  (map->CommandState
+   {:command-ids #{} :commands [] :waiting [] :world-id (new-uuid)}))
 
 (defn to-position [s i]
   (if (= i 0)
     initial-position
-    (str (:uuid s) ":" i)))
+    (str (:world-id s) ":" i)))
 
 (defn from-position [s p]
   (let [rm (re-matches #"([a-z0-9-]+):([0-9]+)" p)]
     (cond
      (= p initial-position) 0
      (nil? rm) nil
-     (not= (rm 1) (:uuid s)) nil
+     (not= (rm 1) (:world-id s)) (do
+                               (log/error "Client lives in the wrong world (expected"
+                                          (:world-id s) ", got" (rm 1) ")")
+                               nil)
      :else (let [i (Integer/parseInt (rm 2))]
              (if (> i (count (:commands s))) nil i)))))
 
@@ -29,28 +55,27 @@
   don't mess w/ it outside tests."}
   command-state (ref (starting-state)))
 
-(defn is-valid-position [p]
-  (not (nil? (from-position (deref command-state) p))))
+(defn valid-position? [position]
+  (not (nil? (from-position (deref command-state) position))))
 
-
-(defn append-command-get-waiting [uuid command]
+(defn append-command-get-waiting! [command-id command]
   (dosync
-   (let [s     (deref command-state)
-         newcl (conj (:commands s) command)]
-     (if (contains? (:uuids s) uuid)
-       [(to-position s (count (:commands s))) nil]
-       (do
-         (ref-set command-state
-                  (assoc s
-                         :uuids    (conj (:uuids s) uuid)
-                         :commands newcl
-                         :waiting  []))
-         [(to-position s (count newcl))
-          (:waiting s)])))))
+   (let [state   (deref command-state)
+         new-cl  (conj (:commands state) command)
+         new-pos (to-position state (count new-cl))]
+     (if (contains? (:command-ids state) command-id)
+       [(to-position state (count (:commands state))) nil]
+       (let [new-state
+             (assoc state
+               :command-ids    (conj (:command-ids state) command-id)
+               :commands new-cl
+               :waiting  [])]
+         (ref-set command-state new-state)
+         [new-pos (:waiting state)])))))
 
-(defn put-command [uuid command]
-  (let [[position toalert] (append-command-get-waiting uuid command)]
-    (doseq [listener toalert]
+(defn put-command! [command-id command]
+  (let [[position waiting] (append-command-get-waiting! command-id command)]
+    (doseq [listener waiting]
       (listener position [command]))))
 
 (defn get-commands-before [position]

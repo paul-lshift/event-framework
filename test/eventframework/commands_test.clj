@@ -22,7 +22,7 @@
 (deftest channel-test
   (facts "commands"
     (with-clear-commands
-      (put-command "uuid" "foo")
+      (put-command! "id" "foo")
       (get-new-commands initial-position))
     => ["foo"]
     (with-clear-commands
@@ -33,30 +33,30 @@
     (with-clear-commands
       (let [res (ref [])]
         (apply-or-enqueue-listener! initial-position (append-callback res))
-        (put-command "uuid" "foo")
+        (put-command! "id" "foo")
         (deref res)))
     => ["foo"]
     (with-clear-commands
-      (put-command "uuid" "foo")
-      (put-command "uuid2" "foo")
+      (put-command! "id" "foo")
+      (put-command! "id2" "foo")
       (get-new-commands initial-position))
     => ["foo", "foo"]
     (with-clear-commands
-      (put-command "uuid" "foo")
-      (put-command "uuid" "foo")
+      (put-command! "id" "foo")
+      (put-command! "id" "foo")
       (get-new-commands initial-position))
     => ["foo"]
     (with-clear-commands
       (let [res (ref [])]
         (apply-or-enqueue-listener! initial-position (append-callback res))
-        (put-command "uuid" "foo")
-        (put-command "uuid2" "foo")
+        (put-command! "id" "foo")
+        (put-command! "id2" "foo")
         (deref res)))
     => ["foo", "foo"]
     (with-clear-commands
       (let [res (ref [])]
         (apply-or-enqueue-listener! initial-position (append-callback res))
-        (put-command "uuid" "foo")
-        (put-command "uuid" "foo")
+        (put-command! "id" "foo")
+        (put-command! "id" "foo")
         (deref res)))
     => ["foo"]))
