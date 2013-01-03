@@ -24,8 +24,10 @@
      :else (let [i (Integer/parseInt (rm 2))]
              (if (> i (count (:commands s))) nil i)))))
 
-;; FIXME(alexander): make sure this has right thread-scope
-(def command-state (ref (starting-state)))
+(def ^{:dynamic true,
+       :doc "This is dynamically scoped for testing purposes,
+  don't mess w/ it outside tests."}
+  command-state (ref (starting-state)))
 
 (defn is-valid-position [p]
   (not (nil? (from-position (deref command-state) p))))

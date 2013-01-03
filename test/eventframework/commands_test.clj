@@ -5,8 +5,8 @@
     midje.sweet))
 
 (defmacro with-clear-commands [& body]
-  `(dosync (ref-set command-state (starting-state))
-           ~@body))
+  `(binding [command-state (ref (starting-state))]
+    (do ~@body)))
 
 (defn append-callback [sym]
   (fn [position commands] (do
