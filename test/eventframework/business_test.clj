@@ -24,19 +24,19 @@
               "user"
               initial-state
               [{:type :newthread
-                :uuid "1"
+                :id "1"
                 :body {:title "title"}}
                {:type :subscribe
-                :uuid "2"
+                :id "2"
                 :body {:user "user" :thread "1"}}
                {:type :message
-                :uuid "3"
+                :id "3"
                 :body {:thread "1" :message "foo"}}]))
     =>
-    [{:type :newthread, :uuid "1", :body {:title "title"}}
+    [{:type :newthread, :id "1", :body {:title "title"}}
      {:type :subscribe
-      :uuid "2",
+      :id "2",
       :body {:thread "1", :user "user"},
       :extraevents [],
       }
-     {:body {:thread "1", :message "foo"}, :uuid "3", :type :message}]))
+     {:body {:thread "1", :message "foo"}, :id "3", :type :message}]))

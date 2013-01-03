@@ -10,10 +10,6 @@
 (defrecord CommandResult
     [new-state events])
 
-(defrecord Message
-    [id type body])
-
-
 (def initial-state (ThreadsAndSubscriptions. {} {}))
 
 (defn update-state [state command]
@@ -80,14 +76,14 @@
                    (CommandResult. state [])
                    commands)))
 
-(defn listen-events
+(defn listen-events!
   ([user position callback]
-     (listen-events user position callback (state-at position)))
+     (listen-events! user position callback (state-at position)))
   ([user position callback state]
-     (eventframework.commands/listen-commands
+     (eventframework.commands/apply-or-enqueue-listener!
       position
       (fn [new-pos commands]
         (let [{:keys [new-state events]} (apply-commands user state commands)]
           (if (not-empty events)
             (callback new-pos events)
-            (listen-events user new-pos callback new-state)))))))
+            (listen-events! user new-pos callback new-state)))))))

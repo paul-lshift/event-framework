@@ -1,5 +1,8 @@
 (ns eventframework.commands)
 
+(defrecord Message
+    [id type body])
+
 (defn new-uuid [] (str (java.util.UUID/randomUUID)))
 
 (def initial-position "0")
@@ -21,24 +24,14 @@
      :else (let [i (Integer/parseInt (rm 2))]
              (if (> i (count (:commands s))) nil i)))))
 
+;; FIXME(alexander): make sure this has right thread-scope
 (def ^:dynamic command-state (ref (starting-state)))
 
-(defmacro with-clear-commands [& body]
-  `(binding [command-state (ref (starting-state))]
-    (do ~@body)))
+
 
 (defn is-valid-position [p]
   (not (nil? (from-position (deref command-state) p))))
 
-(defn get-commands-from [position]
-  (let [s  (deref command-state)
-        cl (:commands s)]
-    [(to-position s (count cl)) (subvec cl (from-position s position))]))
-
-(defn get-commands-to [position]
-  (let [s  (deref command-state)
-        cl (:commands s)]
-    (subvec cl 0 (from-position s position))))
 
 (defn append-command-get-waiting [uuid command]
   (dosync
@@ -60,18 +53,32 @@
     (doseq [listener toalert]
       (listener position [command]))))
 
-(defn get-after-or-add-waiting [position listener]
-  (dosync
-   (let [s  (deref command-state)
-         cl (:commands s)
-         ix (from-position s position)]
-     (if (< ix (count cl))
-       [(to-position s (count cl))
-        (subvec cl ix)]
-       (do
-         (ref-set command-state (update-in s [:waiting] #(conj % listener)))
-         nil)))))
+(defn get-commands-before [position]
+  (let [s  (deref command-state)
+        cl (:commands s)
+        ix (from-position s position)]
+    (subvec cl 0 ix)))
 
-(defn listen-commands [position listener]
-  (let [res (get-after-or-add-waiting position listener)]
-    (if res (apply listener res))))
+(defn get-latest-position-and-commands-after [state position]
+  (let [cl (:commands state)
+        ix (from-position state position)]
+    (when (< ix (count cl))
+      [(to-position state (count cl))
+       (subvec cl ix)])))
+
+;; FIXME(alexander): clean this up once more
+(defn- get-after-or-add-waiting! [position listener]
+  (dosync
+   (let [state (deref command-state)]
+     (or (get-latest-position-and-commands-after state position)
+         (do (ref-set command-state
+                      (update-in state [:waiting] #(conj % listener)))
+             nil)))))
+
+(defn apply-or-enqueue-listener! [position listener]
+  "Apply `listener` to all commands past `position`, or if none, enqueue it."
+  (let [foo (get-after-or-add-waiting! position listener)]
+    (prn "foo is" foo)
+    (when-let [[new-pos new-commands] foo]
+      (listener new-pos new-commands)
+      nil)))
