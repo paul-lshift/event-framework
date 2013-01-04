@@ -11,7 +11,7 @@
     lamina.core
     cheshire.core))
 
-(defn getevents [user position]
+(defn get-events [user position]
   (if (not (valid-position? position))
     (cheshire.core/generate-string {:goaway true})
     (let [ch (lamina.core/channel)]
@@ -31,7 +31,7 @@
   (GET "/events/:user/:position" [user position]
        {:status  200
         :headers {"content-type" "application/json"}
-        :body    (getevents user position)})
+        :body    (get-events user position)})
 
   (PUT "/command/:type/:id"
        {route-params :route-params
@@ -40,7 +40,7 @@
        (let [{type :type id :id} route-params]
          (put-command! id
                       {:type        (keyword type)
-                       :id           id
+                       :id          id
                        :remote-addr remote-addr
                        :body        (zipmap (map keyword
                                                  (keys form-params))
