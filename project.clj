@@ -1,5 +1,7 @@
 (defproject eventframework "1.0.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.4.0"]
+                 [clj-logging-config/clj-logging-config "1.9.10"]
+                 [org.clojure/tools.logging "0.2.3"]
                  [compojure "1.1.1"]
                  [ring/ring-devel "1.1.0"]
                  [aleph "0.2.2"]
@@ -18,4 +20,3 @@
 ; node-uuid
 ; https://github.com/broofa/node-uuid/blob/master/uuid.js
 ; Version: https://github.com/broofa/node-uuid/commit/0cdff1fb0bfb063a09254152958c4334d39c34bd
-
