@@ -60,10 +60,6 @@ function handleEventList(events) {
     var event = events[i];
     console.log("Handling: " + event.type);
     handleEvent[event.type](event);
-    if (event.extraevents) {
-      console.log("Event has extra events");
-      handleEventList(event.extraevents);
-    }
   }
   console.log("<< Events handled");
 }

@@ -116,7 +116,7 @@
          (first bob-events-from-3)   => (contains test-message-event))
 
        (fact "users subscribing later receive all existing messages within the subscribed event"
-         (first (:extraevents (first carol-events-from-4))) => (contains test-message-event))
+         (second carol-events-from-4) => (contains test-message-event))
 
        (fact "position indicators are the same across clients"
          alice-position-2 => bob-position-2

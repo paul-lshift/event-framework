@@ -37,6 +37,5 @@
      {:type :subscribe
       :id "2",
       :body {:thread "1", :user "user"},
-      :extraevents [],
       }
      {:body {:thread "1", :message "foo"}, :id "3", :type :message}]))

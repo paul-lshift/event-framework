@@ -37,8 +37,7 @@
       :subscribe (let [{user :user thread :thread} body]
                    (if (and (= user eventuser)
                             (not (subscribed? state thread eventuser)))
-                     ;; FIXME(alexander): flatten this
-                     [(assoc command :extraevents (get-in state [:threads thread] []))]
+                     (concat [command] (get-in state [:threads thread] []))
                      []))
       :newthread [command]
       :message (let [{thread :thread} body]
