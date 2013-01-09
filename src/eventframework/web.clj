@@ -3,7 +3,9 @@
             [aleph http]
             clojure.tools.logging
             [clj-logging-config.log4j :as log-config]
-            ))
+            )
+  (:gen-class))
+
 
 (defn -main [port]
   (log-config/set-logger! :out *err*)
