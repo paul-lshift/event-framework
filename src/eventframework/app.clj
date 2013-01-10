@@ -44,8 +44,7 @@
        (let [{type :type id :id} route-params
              body (with-open [rdr (io/reader bodyStream)]
                     (cheshire.core/parse-stream rdr keyword))]
-         (put-command! id
-                       {:type        (keyword type)
+         (put-command! {:type        (keyword type)
                         :id          id
                         :remote-addr remote-addr
                         :body        body})

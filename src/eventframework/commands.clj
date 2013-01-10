@@ -58,9 +58,10 @@
 (defn valid-position? [position]
   (not (nil? (from-position (deref *command-state*) position))))
 
-(defn append-command-get-waiting! [command-id command]
+(defn append-command-get-waiting! [command]
   (dosync
-   (let [state   (deref *command-state*)
+   (let [command-id (:id command)
+         state   (deref *command-state*)
          new-cl  (conj (:commands state) command)
          new-pos (to-position state (count new-cl))]
      (if (contains? (:command-ids state) command-id)
@@ -73,8 +74,8 @@
          (ref-set *command-state* new-state)
          [new-pos (:waiting state)])))))
 
-(defn put-command! [command-id command]
-  (let [[position waiting] (append-command-get-waiting! command-id command)]
+(defn put-command! [command]
+  (let [[position waiting] (append-command-get-waiting! command)]
     (doseq [listener waiting]
       (listener position [command]))))
 
