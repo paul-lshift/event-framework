@@ -105,3 +105,10 @@
   (when-let [[new-pos new-commands] (get-from-or-add-waiting! position listener)]
     (listener new-pos new-commands)
     nil))
+
+(defn destroy-the-world! []
+  (dosync
+   (let [state (deref command-state)]
+     (if (empty (:waiting state))
+       (ref-set command-state (starting-state))
+       (throw (RuntimeException. "Can't raze state while there are listeners"))))))

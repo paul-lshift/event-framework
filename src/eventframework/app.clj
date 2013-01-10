@@ -1,8 +1,8 @@
 (ns eventframework.app
   (:use
-    [eventframework.commands :only [valid-position? put-command!]]
+    [eventframework.commands :only [valid-position? put-command! destroy-the-world!]]
     [eventframework.business :only [listen-events!]]
-    [compojure.core :only [defroutes context GET PUT]])
+    [compojure.core :only [defroutes context GET PUT POST]])
   (:require
     [compojure.handler :as handler]
     [ring.util.response :as response]
@@ -45,7 +45,9 @@
                        :body        (zipmap (map keyword
                                                  (keys form-params))
                                             (vals form-params))})
-         id)))
+         id))
+  
+  (POST "/destroy-the-world" [] (destroy-the-world!)))
 
 (defroutes ui
   (GET "/" []  (response/resource-response "index.html" {:root "public"})))
