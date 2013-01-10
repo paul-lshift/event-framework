@@ -9,9 +9,16 @@
     [compojure.handler :as handler]
     [ring.util.response :as response]
     [compojure.route :as route]
+    clj-time.core
+    clj-time.format
     aleph.http
     lamina.core
     cheshire.core))
+
+(defn- iso-now []
+  (clj-time.format/unparse
+    (clj-time.format/formatters :date-time-no-ms)
+    (clj-time.core/now)))
 
 (defn get-events [user position]
   (if (not (valid-position? position))
@@ -46,6 +53,7 @@
                     (cheshire.core/parse-stream rdr keyword))]
          (put-command! {:type        (keyword type)
                         :id          id
+                        :date        (iso-now)
                         :remote-addr remote-addr
                         :body        body})
          id)))
