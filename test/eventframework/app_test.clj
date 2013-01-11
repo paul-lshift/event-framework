@@ -12,20 +12,23 @@
 (defn json-body [response]
   (json/parse-string (first (lamina.core/channel-seq (:body response))) true))
 
-(defn new-thread-request [command-id text]
-  (body (request :put (str "/ajax/command/newthread/" command-id))
-        {:text text}))
+(defn command-request [type id data]
+  (body (request :put (str "/ajax/command/" type "/" id))
+        (json/generate-string data)))
 
-(defn get-events-request [user position] 
+(defn new-thread-request [command-id text]
+  (command-request "newthread" command-id {:text text}))
+
+(defn get-events-request [user position]
   (request :get (str "/ajax/events/" user "/" position)))
 
 (defn subscribe-request [user thread]
-  (body (request :put (str "/ajax/command/subscribe/" (new-uuid)))
-        {:user user :thread thread}))
+  (command-request "subscribe" (new-uuid)
+    {:user user :thread thread}))
 
 (defn message-request [thread message]
-  (body (request :put (str "/ajax/command/message/" (new-uuid)))
-        {:thread thread :message message}))
+  (command-request "message" (new-uuid)
+    {:thread thread :message message}))
 
 (deftest test-app
   (facts "serves static files"
