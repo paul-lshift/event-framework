@@ -39,16 +39,16 @@
 
   (PUT "/command/:type/:id"
        {route-params :route-params
-        form-params  :form-params
+        bodyStream   :body
         remote-addr  :remote-addr}
-       (let [{type :type id :id} route-params]
+       (let [{type :type id :id} route-params
+             body (with-open [rdr (io/reader bodyStream)]
+                    (cheshire.core/parse-stream rdr keyword))]
          (put-command! id
-                      {:type        (keyword type)
-                       :id          id
-                       :remote-addr remote-addr
-                       :body        (zipmap (map keyword
-                                                 (keys form-params))
-                                            (vals form-params))})
+                       {:type        (keyword type)
+                        :id          id
+                        :remote-addr remote-addr
+                        :body        body})
          id)))
 
 (defroutes ui

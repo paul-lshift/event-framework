@@ -3,7 +3,8 @@ function sendCommand(type, body) {
   var request = {
     type: 'PUT'
    ,url: "/ajax/command/" + type + "/" + uuid.v4()
-   ,data: body
+   ,contentType: "application/json"
+   ,data: JSON.stringify(body)
   };
   console.log("Sending command");
   // Test idempotency - send everything twice
@@ -12,6 +13,13 @@ function sendCommand(type, body) {
     console.log("Re-sending command");
     $.ajax(request);
   });
+}
+function submitSendsCommand(form, type) {
+	form.submit(function(event) {
+		sendCommand(type, $(this).serializeObject());
+		this.reset();
+		return false;
+	})
 }
 var handleEvent = {
   newthread: function(event) {
@@ -27,10 +35,7 @@ var handleEvent = {
       "</form>" +
       "</div>");
     $("#thread-" + event.id + " h2").text(event.body.title);
-    $("#thread-" + event.id + " form").submit(function(event) {
-      sendCommand("subscribe", $(this).serialize());
-      return false;
-    });
+    submitSendsCommand($("#thread-" + event.id + " form"), "subscribe");
   }
  ,subscribe: function(event) {
     $("#thread-" + event.body.thread + " form").remove();
@@ -42,11 +47,7 @@ var handleEvent = {
       "<input type=\"text\" name=\"message\" size=\"100\">" +
       "<input type=\"submit\" value=\"Submit\">" +
       "</form>");
-    $("#thread-" + event.body.thread + " form").submit(function(event) {
-      sendCommand("message", $(this).serialize());
-      this.reset();
-      return false;
-    });
+    submitSendsCommand($("#thread-" + event.body.thread + " form"), "message");
   }
  ,message: function(event) {
     var li = document.createElement('li');
@@ -102,11 +103,7 @@ function readEvents(position) {
 }
 $(document).ready(function() {
   console.log("Document ready");
-  $("#newthread").submit(function(event) {
-    sendCommand("newthread", $(this).serialize());
-    this.reset();
-    return false;
-  });
+  submitSendsCommand($("#newthread"), "newthread");
   $("#initfocus").focus();
   readEvents("0");
 });

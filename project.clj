@@ -18,6 +18,6 @@
 
 ; Copied in rather than added as dependency:
 
-; node-uuid
-; https://github.com/broofa/node-uuid/blob/master/uuid.js
-; Version: https://github.com/broofa/node-uuid/commit/0cdff1fb0bfb063a09254152958c4334d39c34bd
+; https://github.com/broofa/node-uuid/blob/0cdff1fb0bfb063a09254152958c4334d39c34bd/uuid.js
+; https://github.com/douglascrockford/JSON-js/blob/43d7836c8ec9b31a02a31ae0c400bdae04d3650d/json2.js
+; https://github.com/macek/jquery-serialize-object/blob/300795024639a86b488db60ec0984330b3a7b523/jquery.serialize-object.js
