@@ -2,8 +2,7 @@
   (:require eventframework.app
             [aleph http]
             clojure.tools.logging
-            [clj-logging-config.log4j :as log-config]
-            ))
+            [clj-logging-config.log4j :as log-config]))
 
 (defn -main [port]
   (log-config/set-logger! :out *err*)
