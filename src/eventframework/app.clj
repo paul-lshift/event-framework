@@ -64,7 +64,7 @@
   (fn [req]
     (try (handler req)
          (catch Exception e
-           (log/error e "processing HTTP request")
+           (log/error e "processing HTTP request" req)
            {:status 500
             :headers {"Content-Type" "text/html"}
             :body (slurp (io/resource "error/500.html"))}))))
