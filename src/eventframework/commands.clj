@@ -20,7 +20,7 @@
     : This is a unique id for the whole environment/world; for a persistent
     backend this will be fixed at its creation. For transient backends (for
     testing etc.) it's generated on startup which means the client can easily
-    diagnose if the server went down (because it will come up w/ a new,
+    diagnose if the server went down (because it will come up with a new,
     incompatible world-id)."}
     CommandState
     [command-ids commands waiting world-id])
@@ -52,7 +52,7 @@
 
 (def ^{:dynamic true,
        :doc "This is dynamically scoped for testing purposes,
-  don't mess w/ it outside tests."}
+  don't mess with it outside tests."}
   command-state (ref (starting-state)))
 
 (defn valid-position? [position]
