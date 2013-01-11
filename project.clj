@@ -11,7 +11,7 @@
   :min-lein-version "2.0.0"
   :plugins [[environ/environ.lein "0.2.1"]]
   :hooks [environ.leiningen.hooks]
-  :main eventframework.web
+  :main eventframework.webwrapper
   :profiles {
     :dev {:dependencies [[ring-mock "0.1.3"]]
           :plugins [[lein-midje "2.0.2"]]}})
