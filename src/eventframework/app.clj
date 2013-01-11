@@ -4,6 +4,8 @@
     [eventframework.business :only [listen-events!]]
     [compojure.core :only [defroutes context GET PUT]])
   (:require
+    [clojure.tools.logging :as log]
+    [clojure.java.io :as io]
     [compojure.handler :as handler]
     [ring.util.response :as response]
     [compojure.route :as route]
@@ -27,6 +29,8 @@
 
 (defroutes ajax
   (GET "/foo" [] "foo")
+
+  (GET "/fail" [] (throw (RuntimeException. "Fail")))
 
   (GET "/events/:user/:position" [user position]
        {:status  200
@@ -56,4 +60,13 @@
   (route/resources "/")
   (route/not-found (response/resource-response "404.html" {:root "error"})))
 
-(def app (handler/site towrap))
+(defn wrap-error-page [handler]
+  (fn [req]
+    (try (handler req)
+         (catch Exception e
+           (log/error e "processing HTTP request" req)
+           {:status 500
+            :headers {"Content-Type" "text/html"}
+            :body (slurp (io/resource "error/500.html"))}))))
+
+(def app (wrap-error-page (handler/site towrap)))
