@@ -1,1 +1,1 @@
-web: lein trampoline run -m eventframework.web $PORT
+web: lein trampoline run $PORT
