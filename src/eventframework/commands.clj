@@ -29,9 +29,14 @@
 
 (def initial-position "0")
 
-(defn starting-state []
+(defn starting-state-with-commands [commands]
   (map->CommandState
-   {:command-ids #{} :commands [] :waiting [] :world-id (new-uuid)}))
+   {:world-id (new-uuid)
+    :commands commands
+    :command-ids (set (map :id commands))
+    :waiting []}))
+
+(defn starting-state [] (starting-state-with-commands []))
 
 (defn to-position [s i]
   (if (= i 0)
@@ -108,3 +113,11 @@
     nil))
 
 (defn get-all-commands [] (:commands (deref *command-state*)))
+
+(defn set-commands! [commands]
+  (let [new-state (starting-state-with-commands commands)]
+	  (dosync
+	    (let [state (deref *command-state*)]
+	      (if (empty (:waiting state))
+	        (ref-set *command-state* new-state)
+	        (throw (RuntimeException. "Can't wipe and replace state while there are listeners")))))))

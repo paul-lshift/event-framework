@@ -130,7 +130,7 @@
 	         (clj-time.format/parse
 	           (clj-time.format/formatters :date-time-no-ms)
 	           (:date (first alice-events-from-0))) => (date-roughly (time/now)))
-	
+
 	       (fact "distributes new threads to users"
 	         (first alice-events-from-0) => (contains hello-world-thread-command)
 	         (first bob-events-from-0)   => (contains hello-world-thread-command)
@@ -154,4 +154,37 @@
 	       (fact "position indicators are the same across clients"
 	         alice-position-2 => bob-position-2
 	         alice-position-4 => bob-position-4
-	         alice-position-4 => carol-position-4))))
+	         alice-position-4 => carol-position-4)))
+
+  ;; FIXME this is pretty horrendous
+  (with-clear-commands
+	  (let [thread-command-id        (new-uuid)
+	        ;; start new thread command (next position will be 1)
+	        new-thread-response      (app (new-thread-request thread-command-id "Hello World!"))
+	        hello-world-thread-command {:type "newthread"
+	                                    :id   thread-command-id
+	                                    :body {:text "Hello World!"}}
+
+	        ;; Look in /commands
+	        commands-position-1 (app (request :get "/ajax/commands"))
+
+          clear-commands-response (app (body (request :put "/ajax/commands") "[]"))
+
+          start-another-thread (app (new-thread-request (new-uuid) "Different"))
+
+	        ;; we should see the different event after the clear
+	        after-clear (json-body (app (get-events-request "alice" "0")))
+
+          ;; now restore the commands
+
+          restore-commands-response (app (body (request :put "/ajax/commands")
+                                               (:body commands-position-1)))
+
+          ;; and our events should be present again
+	        after-restore (json-body (app (get-events-request "alice" "0")))]
+
+         (fact "thread is different after clear"
+	         (first (:events after-clear)) => (contains {:body {:text "Different"}}))
+
+	       (fact "thread is restored after restore"
+	         (first (:events after-restore)) => (contains hello-world-thread-command)))))
