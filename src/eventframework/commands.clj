@@ -106,3 +106,5 @@
   (when-let [[new-pos new-commands] (get-from-or-add-waiting! position listener)]
     (listener new-pos new-commands)
     nil))
+
+(defn get-all-commands [] (:commands (deref *command-state*)))

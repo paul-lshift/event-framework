@@ -25,6 +25,7 @@
   ([expected]
     (date-roughly expected (time/minutes 10))))
 
+; FIXME: check code is 200 before parsing
 (defn json-body [response]
   (json/parse-string (first (lamina.core/channel-seq (:body response))) true))
 
@@ -66,10 +67,13 @@
 	  (let [thread-command-id        (new-uuid)
 	        ;; start new thread command (next position will be 1)
 	        new-thread-response      (app (new-thread-request thread-command-id "Hello World!"))
-	        hello-world-thread-event {:type "newthread"
-	                                  :id   thread-command-id
-	                                  :body {:text "Hello World!"}}
+	        hello-world-thread-command {:type "newthread"
+	                                    :id   thread-command-id
+	                                    :body {:text "Hello World!"}}
 	
+	        ; Look in /commands
+	        commands-position-1 (app (request :get "/ajax/commands"))
+
 	        ;; alice receives the thread started event
 	        {alice-position-1 :position alice-events-from-0 :events}
 	        (json-body (app (get-events-request "alice" "0")))
@@ -118,15 +122,19 @@
 	       (fact "allows creation of conversation threads"
 	         new-thread-response => (contains {:status 200}))
 	
+	       (fact "Puts the creation into the command history"
+	         (first (json/parse-string (:body commands-position-1) true))
+	             => (contains hello-world-thread-command))
+
 	       (fact "includes the date in event"
 	         (clj-time.format/parse
 	           (clj-time.format/formatters :date-time-no-ms)
 	           (:date (first alice-events-from-0))) => (date-roughly (time/now)))
 	
 	       (fact "distributes new threads to users"
-	         (first alice-events-from-0) => (contains hello-world-thread-event)
-	         (first bob-events-from-0)   => (contains hello-world-thread-event)
-	         (first carol-events-from-0) => (contains hello-world-thread-event))
+	         (first alice-events-from-0) => (contains hello-world-thread-command)
+	         (first bob-events-from-0)   => (contains hello-world-thread-command)
+	         (first carol-events-from-0) => (contains hello-world-thread-command))
 	       
 	       (fact "allows subscription to threads"
 	         (first alice-events-from-1) => (contains {:type "subscribe"

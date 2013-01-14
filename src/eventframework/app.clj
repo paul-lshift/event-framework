@@ -1,6 +1,6 @@
 (ns eventframework.app
   (:use
-    [eventframework.commands :only [valid-position? put-command!]]
+    [eventframework.commands :only [valid-position? put-command! get-all-commands]]
     [eventframework.business :only [listen-events!]]
     [compojure.core :only [defroutes context GET PUT]])
   (:require
@@ -38,6 +38,11 @@
   (GET "/foo" [] "foo")
 
   (GET "/fail" [] (throw (RuntimeException. "Fail")))
+
+  (GET "/commands" []
+       {:status 200
+        :headers {"content-type" "application/json"}
+        :body (cheshire.core/generate-string (get-all-commands) {:pretty true})})
 
   (GET "/events/:user/:position" [user position]
        {:status  200
