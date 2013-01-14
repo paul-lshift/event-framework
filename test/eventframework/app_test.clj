@@ -7,10 +7,11 @@
     [midje.sweet :only [facts fact contains]]
     [midje.checkers.defining :only [checker defchecker]]
     [midje.error-handling.exceptions :only [captured-throwable?]]
-    [ring.mock.request :only [request body]])
+    [ring.mock.request :only [request body content-type]])
   (:require
    [cheshire.core :as json]
    [clj-time.core :as time]
+   [clojure.java.io :as io]
    clj-time.format))
 
 (defchecker filematch [rexp]
@@ -187,4 +188,32 @@
 	         (first (:events after-clear)) => (contains {:body {:text "Different"}}))
 
 	       (fact "thread is restored after restore"
-	         (first (:events after-restore)) => (contains hello-world-thread-command)))))
+	         (first (:events after-restore)) => (contains hello-world-thread-command))))
+  ;; FIXME this is pretty horrendous
+  (with-clear-commands
+	  (let [thread-command-id        (new-uuid)
+	        ;; start new thread command (next position will be 1)
+	        new-thread-response      (app (new-thread-request thread-command-id "Hello World!"))
+	        hello-world-thread-command {:type "newthread"
+	                                    :id   thread-command-id
+	                                    :body {:text "Hello World!"}}
+
+          ;; Now push another event
+          another-thread-response (->
+                                    (request :post "/ajax/commands-append")
+                                    (content-type "application/json")
+                                    (body (slurp (io/resource "thread-command.json")))
+                                    (app))
+
+          ; And see what we get
+          after-push (json-body (app (get-events-request "alice" "0")))]
+
+     (fact "First thread is present"
+           (first (:events after-push)) => (contains {:body {:text "Hello World!"}}))
+
+     (fact "Push is allowed"
+	         another-thread-response => (contains {:status 200}))
+
+     
+     (fact "Pushed thread is present"
+           (second (:events after-push)) => (contains {:body {:text "This thread was created artificially"}})))))

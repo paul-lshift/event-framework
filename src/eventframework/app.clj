@@ -2,7 +2,7 @@
   (:use
     [eventframework.commands :only [valid-position? put-command! get-all-commands set-commands!]]
     [eventframework.business :only [listen-events!]]
-    [compojure.core :only [defroutes context GET PUT]])
+    [compojure.core :only [defroutes context GET PUT POST]])
   (:require
     [clojure.tools.logging :as log]
     [clojure.java.io :as io]
@@ -57,6 +57,14 @@
          (set-commands! (vec (map fix-type (read-json body))))
          "Success"))
   
+  (POST "/commands-append"
+       {body :body}
+       (do
+	       (doseq [command (vec (map fix-type (read-json body)))]
+	         (put-command! command))
+         "Success"))
+        
+       
   (GET "/events/:user/:position" [user position]
        {:status  200
         :headers {"content-type" "application/json"}
