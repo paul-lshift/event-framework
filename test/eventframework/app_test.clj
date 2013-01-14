@@ -1,15 +1,29 @@
 (ns eventframework.app-test
   (:use
-    (eventframework app
+    [eventframework [app :only [app]]
                     [commands :only [new-uuid]]
-                    commands-support)
-    clojure.test
-    midje.sweet
-    ring.mock.request)
+                    commands-support]
+    [clojure.test :only [deftest]]
+    [midje.sweet :only [facts fact contains]]
+    [midje.checkers.defining :only [checker defchecker]]
+    [midje.error-handling.exceptions :only [captured-throwable?]]
+    [ring.mock.request :only [request body]])
   (:require
-   [cheshire.core :as json]))
+   [cheshire.core :as json]
+   [clj-time.core :as time]
+   clj-time.format))
 
-(defn filematch [rexp] #(re-find rexp (slurp %)))
+(defchecker filematch [rexp]
+  (checker [file] (re-find rexp (slurp file))))
+
+(defchecker date-roughly
+  ([expected delta]
+    (checker [actual]
+      (and (not (captured-throwable? actual))
+           (time/after? (time/plus expected delta) actual)
+           (time/before? (time/minus expected delta) actual))))
+  ([expected]
+    (date-roughly expected (time/minutes 10))))
 
 (defn json-body [response]
   (json/parse-string (first (lamina.core/channel-seq (:body response))) true))
@@ -47,8 +61,8 @@
       => (contains {:status 404
                     :body (filematch #"typos")}))
 
+  ;; FIXME this is pretty horrendous
   (with-clear-commands
-	  ;; FIXME this is pretty horrendous
 	  (let [thread-command-id        (new-uuid)
 	        ;; start new thread command (next position will be 1)
 	        new-thread-response      (app (new-thread-request thread-command-id "Hello World!"))
@@ -103,6 +117,11 @@
 	
 	       (fact "allows creation of conversation threads"
 	         new-thread-response => (contains {:status 200}))
+	
+	       (fact "includes the date in event"
+	         (clj-time.format/parse
+	           (clj-time.format/formatters :date-time-no-ms)
+	           (:date (first alice-events-from-0))) => (date-roughly (time/now)))
 	
 	       (fact "distributes new threads to users"
 	         (first alice-events-from-0) => (contains hello-world-thread-event)

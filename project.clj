@@ -1,5 +1,6 @@
 (defproject eventframework "1.0.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.4.0"]
+                 [clj-time "0.4.4"]
                  [clj-logging-config/clj-logging-config "1.9.10"]
                  [org.clojure/tools.logging "0.2.3"]
                  [compojure "1.1.1"]
