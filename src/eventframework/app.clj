@@ -36,7 +36,7 @@
 
 (defn- read-json [body]
   (with-open [rdr (io/reader body)]
-                    (cheshire.core/parse-stream rdr true)))
+    (cheshire.core/parse-stream rdr true)))
 
 (defn- fix-type [command]
   (update-in command [:type] keyword))
