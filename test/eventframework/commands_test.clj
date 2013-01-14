@@ -1,12 +1,9 @@
 (ns eventframework.commands-test
   (:use
     eventframework.commands
+    eventframework.commands-support
     clojure.test
     midje.sweet))
-
-(defmacro with-clear-commands [& body]
-  `(binding [command-state (ref (starting-state))]
-    (do ~@body)))
 
 (defn append-callback [sym]
   (fn [position commands] (do
@@ -15,7 +12,7 @@
 
 (defn get-new-commands [position]
   (let [[_ commands] (get-next-position-and-commands-from
-                      (deref command-state)
+                      (deref *command-state*)
                       position)]
     commands))
 

@@ -53,14 +53,14 @@
 (def ^{:dynamic true,
        :doc "This is dynamically scoped for testing purposes,
   don't mess with it outside tests."}
-  command-state (ref (starting-state)))
+  *command-state* (ref (starting-state)))
 
 (defn valid-position? [position]
-  (not (nil? (from-position (deref command-state) position))))
+  (not (nil? (from-position (deref *command-state*) position))))
 
 (defn append-command-get-waiting! [command-id command]
   (dosync
-   (let [state   (deref command-state)
+   (let [state   (deref *command-state*)
          new-cl  (conj (:commands state) command)
          new-pos (to-position state (count new-cl))]
      (if (contains? (:command-ids state) command-id)
@@ -70,7 +70,7 @@
                :command-ids    (conj (:command-ids state) command-id)
                :commands new-cl
                :waiting  [])]
-         (ref-set command-state new-state)
+         (ref-set *command-state* new-state)
          [new-pos (:waiting state)])))))
 
 (defn put-command! [command-id command]
@@ -79,7 +79,7 @@
       (listener position [command]))))
 
 (defn get-commands-before [position]
-  (let [s  (deref command-state)
+  (let [s  (deref *command-state*)
         cl (:commands s)
         ix (from-position s position)]
     (subvec cl 0 ix)))
@@ -94,9 +94,9 @@
 ;; FIXME(alexander): clean this up once more
 (defn- get-from-or-add-waiting! [position listener]
   (dosync
-   (let [state (deref command-state)]
+   (let [state (deref *command-state*)]
      (or (get-next-position-and-commands-from state position)
-         (do (ref-set command-state
+         (do (ref-set *command-state*
                       (update-in state [:waiting] #(conj % listener)))
              nil)))))
 
