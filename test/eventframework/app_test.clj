@@ -1,16 +1,31 @@
 (ns eventframework.app-test
   (:use
-    (eventframework app
+    [eventframework [app :only [app]]
                     [commands :only [new-uuid]]
-                    commands-support)
-    clojure.test
-    midje.sweet
-    ring.mock.request)
+                    commands-support]
+    [clojure.test :only [deftest]]
+    [midje.sweet :only [facts fact contains]]
+    [midje.checkers.defining :only [checker defchecker]]
+    [midje.error-handling.exceptions :only [captured-throwable?]]
+    [ring.mock.request :only [request body]])
   (:require
-   [cheshire.core :as json]))
+   [cheshire.core :as json]
+   [clj-time.core :as time]
+   clj-time.format))
 
-(defn filematch [rexp] #(re-find rexp (slurp %)))
+(defchecker filematch [rexp]
+  (checker [file] (re-find rexp (slurp file))))
 
+(defchecker date-roughly
+  ([expected delta]
+    (checker [actual]
+      (and (not (captured-throwable? actual))
+           (time/after? (time/plus expected delta) actual)
+           (time/before? (time/minus expected delta) actual))))
+  ([expected]
+    (date-roughly expected (time/minutes 10))))
+
+; FIXME: check code is 200 before parsing
 (defn json-body [response]
   (json/parse-string (first (lamina.core/channel-seq (:body response))) true))
 
@@ -47,15 +62,18 @@
       => (contains {:status 404
                     :body (filematch #"typos")}))
 
+  ;; FIXME this is pretty horrendous
   (with-clear-commands
-	  ;; FIXME this is pretty horrendous
 	  (let [thread-command-id        (new-uuid)
 	        ;; start new thread command (next position will be 1)
 	        new-thread-response      (app (new-thread-request thread-command-id "Hello World!"))
-	        hello-world-thread-event {:type "newthread"
-	                                  :id   thread-command-id
-	                                  :body {:text "Hello World!"}}
+	        hello-world-thread-command {:type "newthread"
+	                                    :id   thread-command-id
+	                                    :body {:text "Hello World!"}}
 	
+	        ; Look in /commands
+	        commands-position-1 (app (request :get "/ajax/commands"))
+
 	        ;; alice receives the thread started event
 	        {alice-position-1 :position alice-events-from-0 :events}
 	        (json-body (app (get-events-request "alice" "0")))
@@ -104,10 +122,19 @@
 	       (fact "allows creation of conversation threads"
 	         new-thread-response => (contains {:status 200}))
 	
+	       (fact "Puts the creation into the command history"
+	         (first (json/parse-string (:body commands-position-1) true))
+	             => (contains hello-world-thread-command))
+
+	       (fact "includes the date in event"
+	         (clj-time.format/parse
+	           (clj-time.format/formatters :date-time-no-ms)
+	           (:date (first alice-events-from-0))) => (date-roughly (time/now)))
+
 	       (fact "distributes new threads to users"
-	         (first alice-events-from-0) => (contains hello-world-thread-event)
-	         (first bob-events-from-0)   => (contains hello-world-thread-event)
-	         (first carol-events-from-0) => (contains hello-world-thread-event))
+	         (first alice-events-from-0) => (contains hello-world-thread-command)
+	         (first bob-events-from-0)   => (contains hello-world-thread-command)
+	         (first carol-events-from-0) => (contains hello-world-thread-command))
 	       
 	       (fact "allows subscription to threads"
 	         (first alice-events-from-1) => (contains {:type "subscribe"
@@ -127,4 +154,37 @@
 	       (fact "position indicators are the same across clients"
 	         alice-position-2 => bob-position-2
 	         alice-position-4 => bob-position-4
-	         alice-position-4 => carol-position-4))))
+	         alice-position-4 => carol-position-4)))
+
+  ;; FIXME this is pretty horrendous
+  (with-clear-commands
+	  (let [thread-command-id        (new-uuid)
+	        ;; start new thread command (next position will be 1)
+	        new-thread-response      (app (new-thread-request thread-command-id "Hello World!"))
+	        hello-world-thread-command {:type "newthread"
+	                                    :id   thread-command-id
+	                                    :body {:text "Hello World!"}}
+
+	        ;; Look in /commands
+	        commands-position-1 (app (request :get "/ajax/commands"))
+
+          clear-commands-response (app (body (request :put "/ajax/commands") "[]"))
+
+          start-another-thread (app (new-thread-request (new-uuid) "Different"))
+
+	        ;; we should see the different event after the clear
+	        after-clear (json-body (app (get-events-request "alice" "0")))
+
+          ;; now restore the commands
+
+          restore-commands-response (app (body (request :put "/ajax/commands")
+                                               (:body commands-position-1)))
+
+          ;; and our events should be present again
+	        after-restore (json-body (app (get-events-request "alice" "0")))]
+
+         (fact "thread is different after clear"
+	         (first (:events after-clear)) => (contains {:body {:text "Different"}}))
+
+	       (fact "thread is restored after restore"
+	         (first (:events after-restore)) => (contains hello-world-thread-command)))))

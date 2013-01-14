@@ -19,9 +19,9 @@
 (deftest channel-test
   (facts "commands"
     (with-clear-commands
-      (put-command! "id" "foo")
+      (put-command! {:id "id" :foo "foo"})
       (get-new-commands initial-position))
-    => ["foo"]
+    => [{:id "id" :foo "foo"}]
     (with-clear-commands
       (let [res (ref [])]
         (apply-or-enqueue-listener! initial-position (append-callback res))
@@ -30,30 +30,30 @@
     (with-clear-commands
       (let [res (ref [])]
         (apply-or-enqueue-listener! initial-position (append-callback res))
-        (put-command! "id" "foo")
+        (put-command! {:id "id" :foo "foo"})
         (deref res)))
-    => ["foo"]
+    => [{:id "id" :foo "foo"}]
     (with-clear-commands
-      (put-command! "id" "foo")
-      (put-command! "id2" "foo")
+      (put-command! {:id "id" :foo "foo"})
+      (put-command! {:id "id2" :foo "foo"})
       (get-new-commands initial-position))
-    => ["foo", "foo"]
+    => [{:id "id" :foo "foo"}, {:id "id2" :foo "foo"}]
     (with-clear-commands
-      (put-command! "id" "foo")
-      (put-command! "id" "foo")
+      (put-command! {:id "id" :foo "foo"})
+      (put-command! {:id "id" :foo "foo"})
       (get-new-commands initial-position))
-    => ["foo"]
+    => [{:id "id" :foo "foo"}]
     (with-clear-commands
       (let [res (ref [])]
         (apply-or-enqueue-listener! initial-position (append-callback res))
-        (put-command! "id" "foo")
-        (put-command! "id2" "foo")
+        (put-command! {:id "id" :foo "foo"})
+        (put-command! {:id "id2" :foo "foo"})
         (deref res)))
-    => ["foo", "foo"]
+    => [{:id "id" :foo "foo"}, {:id "id2" :foo "foo"}]
     (with-clear-commands
       (let [res (ref [])]
         (apply-or-enqueue-listener! initial-position (append-callback res))
-        (put-command! "id" "foo")
-        (put-command! "id" "foo")
+        (put-command! {:id "id" :foo "foo"})
+        (put-command! {:id "id" :foo "foo"})
         (deref res)))
-    => ["foo"]))
+    => [{:id "id" :foo "foo"}]))

@@ -1,6 +1,6 @@
 (ns eventframework.app
   (:use
-    [eventframework.commands :only [valid-position? put-command!]]
+    [eventframework.commands :only [valid-position? put-command! get-all-commands set-commands!]]
     [eventframework.business :only [listen-events!]]
     [compojure.core :only [defroutes context GET PUT]])
   (:require
@@ -9,9 +9,16 @@
     [compojure.handler :as handler]
     [ring.util.response :as response]
     [compojure.route :as route]
+    clj-time.core
+    clj-time.format
     aleph.http
     lamina.core
     cheshire.core))
+
+(defn- iso-now []
+  (clj-time.format/unparse
+    (clj-time.format/formatters :date-time-no-ms)
+    (clj-time.core/now)))
 
 (defn get-events [user position]
   (if (not (valid-position? position))
@@ -27,11 +34,29 @@
                         (lamina.core/close ch)))
       ch)))
 
+(defn- read-json [body]
+  (with-open [rdr (io/reader body)]
+    (cheshire.core/parse-stream rdr true)))
+
+(defn- fix-type [command]
+  (update-in command [:type] keyword))
+
 (defroutes ajax
   (GET "/foo" [] "foo")
 
   (GET "/fail" [] (throw (RuntimeException. "Fail")))
 
+  (GET "/commands" []
+       {:status 200
+        :headers {"content-type" "application/json"}
+        :body (cheshire.core/generate-string (get-all-commands) {:pretty true})})
+
+  (PUT "/commands"
+       {body :body}
+       (do
+         (set-commands! (vec (map fix-type (read-json body))))
+         "Success"))
+  
   (GET "/events/:user/:position" [user position]
        {:status  200
         :headers {"content-type" "application/json"}
@@ -39,16 +64,14 @@
 
   (PUT "/command/:type/:id"
        {route-params :route-params
-        bodyStream   :body
+        body         :body
         remote-addr  :remote-addr}
-       (let [{type :type id :id} route-params
-             body (with-open [rdr (io/reader bodyStream)]
-                    (cheshire.core/parse-stream rdr keyword))]
-         (put-command! id
-                       {:type        (keyword type)
+       (let [{type :type id :id} route-params]
+         (put-command! {:type        (keyword type)
                         :id          id
+                        :date        (iso-now)
                         :remote-addr remote-addr
-                        :body        body})
+                        :body        (read-json body)})
          id)))
 
 (defroutes ui
