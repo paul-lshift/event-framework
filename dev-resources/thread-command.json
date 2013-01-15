@@ -1,0 +1,11 @@
+[
+  {
+    "type": "newthread",
+    "id": "foo",
+    "date": "2013-01-14T17:30:32Z",
+    "remote-addr": "localhost",
+    "body": {
+      "text": "This thread was created artificially"
+    }
+  }
+]
