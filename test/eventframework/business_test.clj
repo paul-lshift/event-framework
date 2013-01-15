@@ -1,6 +1,7 @@
 (ns eventframework.business-test
    (:use
      eventframework.business
+     eventframework.apply-business
      clojure.test
      midje.sweet))
 
